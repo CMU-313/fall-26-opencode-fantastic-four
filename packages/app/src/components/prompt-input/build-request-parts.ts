@@ -5,6 +5,7 @@ import { encodeFilePath } from "@/context/file/path"
 import type { AgentPart, FileAttachmentPart, ImageAttachmentPart, Prompt } from "@/context/prompt"
 import { Identifier } from "@/utils/id"
 import { createCommentMetadata, formatCommentNote } from "@/utils/comment-note"
+import { getExplanationInstructions, type ExplanationLevel } from "@/learning/explanation-level"
 
 type PromptRequestPart = (TextPartInput | FilePartInput | AgentPartInput) & { id: string }
 
@@ -27,6 +28,7 @@ type BuildRequestPartsInput = {
   messageID: string
   sessionID: string
   sessionDirectory: string
+  explanationLevel?: ExplanationLevel
 }
 
 const absolute = (directory: string, path: string) => {
@@ -142,6 +144,21 @@ export function buildRequestParts(input: BuildRequestPartsInput) {
     } satisfies PromptRequestPart
   })
 
+  const explanation = input.explanationLevel
+    ? [
+        {
+          id: Identifier.ascending("part"),
+          type: "text" as const,
+          text: [
+            "Explain the selected code in the attached file selection.",
+            "Do not edit or propose edits to the selected file.",
+            getExplanationInstructions(input.explanationLevel),
+          ].join(" "),
+          synthetic: true,
+        } satisfies PromptRequestPart,
+      ]
+    : []
+
   const used = new Set(files.map((part) => part.url))
   const context = input.context.flatMap((item) => {
     const path = absolute(input.sessionDirectory, item.path)
@@ -204,7 +221,7 @@ export function buildRequestParts(input: BuildRequestPartsInput) {
     } satisfies PromptRequestPart
   })
 
-  requestParts.push(...files, ...context, ...agents, ...images)
+  requestParts.push(...explanation, ...files, ...context, ...agents, ...images)
 
   return {
     requestParts,

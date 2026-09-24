@@ -72,6 +72,7 @@ export type PromptStore = {
   cursor?: number
   model?: PromptModel
   explanationLevel: ExplanationLevel
+  explanationRequested: boolean
   context: {
     items: (ContextItem & { key: string })[]
   }
@@ -166,6 +167,7 @@ function createPromptActions(setStore: SetStoreFunction<PromptStore>) {
       batch(() => {
         setStore("prompt", clonePrompt(DEFAULT_PROMPT))
         setStore("cursor", 0)
+        setStore("explanationRequested", false)
       })
     },
   }
@@ -185,6 +187,7 @@ function promptStore(initial?: InitialPrompt): PromptStore {
     cursor: text === undefined ? undefined : text.length,
     model: initial?.model ? { ...initial.model } : undefined,
     explanationLevel: DEFAULT_EXPLANATION_LEVEL,
+    explanationRequested: false,
     context: {
       items: [],
     },
@@ -206,6 +209,11 @@ function createPromptStateValue(store: PromptStore, setStore: SetStoreFunction<P
       current: () => store.explanationLevel,
       set: (level: ExplanationLevel) => setStore("explanationLevel", level),
       reset: () => setStore("explanationLevel", DEFAULT_EXPLANATION_LEVEL),
+    },
+    explanationRequest: {
+      current: () => store.explanationRequested ?? false,
+      start: () => setStore("explanationRequested", true),
+      reset: () => setStore("explanationRequested", false),
     },
     context: {
       items: createMemo(() => store.context.items),

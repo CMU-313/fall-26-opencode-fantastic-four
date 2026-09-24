@@ -25,6 +25,7 @@ describe("prompt state initialization", () => {
       expect(prompt.cursor()).toBeUndefined()
       expect(prompt.model.current()).toBeUndefined()
       expect(prompt.explanationLevel.current()).toBe(DEFAULT_EXPLANATION_LEVEL)
+      expect(prompt.explanationRequest.current()).toBe(false)
       dispose()
     })
   })
@@ -53,6 +54,21 @@ describe("prompt explanation level", () => {
 
       expect(first.explanationLevel.current()).toBe("intermediate")
       expect(second.explanationLevel.current()).toBe(DEFAULT_EXPLANATION_LEVEL)
+      dispose()
+    })
+  })
+})
+
+describe("prompt explanation request", () => {
+  test("clears the one-shot explanation request when the prompt resets", () => {
+    createRoot((dispose) => {
+      const prompt = createPromptState()
+
+      prompt.explanationRequest.start()
+      expect(prompt.explanationRequest.current()).toBe(true)
+
+      prompt.reset()
+      expect(prompt.explanationRequest.current()).toBe(false)
       dispose()
     })
   })

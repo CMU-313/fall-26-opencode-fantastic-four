@@ -46,6 +46,7 @@ const [promptStore, setPromptStore] = createStore<PromptStore>({
   prompt: promptValue,
   cursor: 0,
   explanationLevel: "beginner",
+  explanationRequested: false,
   context: { items: [] },
 })
 const prompt = {
@@ -61,6 +62,11 @@ const prompt = {
   explanationLevel: {
     current: () => "beginner" as const,
     set: () => undefined,
+    reset: () => undefined,
+  },
+  explanationRequest: {
+    current: () => false,
+    start: () => undefined,
     reset: () => undefined,
   },
   reset: () => undefined,
