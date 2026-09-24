@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { desktopNativePluralCategories } from "./desktop-native"
+import { APP_ENGLISH_FALLBACK_KEYS } from "./fallback"
 
 const appLocales = [
   "ar",
@@ -81,28 +82,32 @@ const domains = [
     source: "./en.ts",
     target: (locale: string) => `./${locale}.ts`,
     locales: appLocales,
+    fallback: APP_ENGLISH_FALLBACK_KEYS,
   },
   {
     name: "ui",
     source: "../../../ui/src/i18n/en.ts",
     target: (locale: string) => `../../../ui/src/i18n/${locale}.ts`,
     locales: appLocales,
+    fallback: [] as const,
   },
   {
     name: "desktop",
     source: "../../../desktop/src/renderer/i18n/en.ts",
     target: (locale: string) => `../../../desktop/src/renderer/i18n/${locale}.ts`,
     locales: desktopLocales,
+    fallback: [] as const,
   },
 ] as const
 
 describe("i18n parity", () => {
-  test("non-English locales have every English key and required plural variants", async () => {
+  test("non-English locales have every required English key and plural variant", async () => {
     for (const domain of domains) {
       const source = await dictionary(domain.source)
+      const fallback = new Set<string>(domain.fallback)
       for (const locale of domain.locales) {
         const target = await dictionary(domain.target(locale))
-        const missing = Object.keys(source).filter((key) => !Object.hasOwn(target, key))
+        const missing = Object.keys(source).filter((key) => !Object.hasOwn(target, key) && !fallback.has(key))
         const extra = Object.keys(target)
           .filter((key) => !Object.hasOwn(source, key))
           .sort()
@@ -117,6 +122,15 @@ describe("i18n parity", () => {
         })
       }
     }
+  })
+
+  test("approved English fallback keys exist and are still needed", async () => {
+    const source = await dictionary("./en.ts")
+    const targets = await Promise.all(appLocales.map((locale) => dictionary(`./${locale}.ts`)))
+    const invalid = APP_ENGLISH_FALLBACK_KEYS.filter((key) => !Object.hasOwn(source, key))
+    const stale = APP_ENGLISH_FALLBACK_KEYS.filter((key) => targets.every((target) => Object.hasOwn(target, key)))
+
+    expect({ invalid, stale }).toEqual({ invalid: [], stale: [] })
   })
 
   test("non-English locales preserve English placeholders", async () => {

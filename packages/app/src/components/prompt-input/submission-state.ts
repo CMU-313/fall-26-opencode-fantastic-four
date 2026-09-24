@@ -6,6 +6,7 @@ export function createPromptSubmissionState(input: {
   target: PromptTarget
   prompt: Prompt
   context: (ContextItem & { key: string })[]
+  explanationRequested: boolean
 }) {
   const initial = input.target
   let target = input.target
@@ -14,6 +15,7 @@ export function createPromptSubmissionState(input: {
   return {
     prompt: input.prompt,
     context: input.context,
+    explanationRequested: input.explanationRequested,
     target: () => target,
     clear() {
       if (initial !== target) initial.reset()
@@ -22,11 +24,15 @@ export function createPromptSubmissionState(input: {
     },
     retarget(next: PromptTarget) {
       input.context.forEach(next.context.add)
+      next.explanationLevel.set(target.explanationLevel.current())
+      if (input.explanationRequested) next.explanationRequest.start()
+      if (initial !== next) initial.explanationLevel.reset()
       target = next
     },
     current: (value: PromptTarget) => target === value,
     restore() {
       if (cleared !== undefined && target.current() !== cleared) return
+      if (input.explanationRequested) target.explanationRequest.start()
       return { target, prompt: input.prompt, context: input.context }
     },
   }
