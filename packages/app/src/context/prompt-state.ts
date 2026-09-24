@@ -7,6 +7,7 @@ import { Persist, persisted } from "@/utils/persist"
 import type { ServerScope } from "@/utils/server-scope"
 import type { BlobReference } from "@/utils/draft-store"
 import type { Platform } from "@/context/platform"
+import { DEFAULT_EXPLANATION_LEVEL, type ExplanationLevel } from "@/learning/explanation-level"
 
 interface PartBase {
   content: string
@@ -70,6 +71,7 @@ export type PromptStore = {
   prompt: Prompt
   cursor?: number
   model?: PromptModel
+  explanationLevel: ExplanationLevel
   context: {
     items: (ContextItem & { key: string })[]
   }
@@ -182,6 +184,7 @@ function promptStore(initial?: InitialPrompt): PromptStore {
       text === undefined ? clonePrompt(DEFAULT_PROMPT) : [{ type: "text", content: text, start: 0, end: text.length }],
     cursor: text === undefined ? undefined : text.length,
     model: initial?.model ? { ...initial.model } : undefined,
+    explanationLevel: DEFAULT_EXPLANATION_LEVEL,
     context: {
       items: [],
     },
@@ -198,6 +201,11 @@ function createPromptStateValue(store: PromptStore, setStore: SetStoreFunction<P
     model: {
       current: () => store.model,
       set: (model: PromptModel | undefined) => setStore("model", model),
+    },
+    explanationLevel: {
+      current: () => store.explanationLevel,
+      set: (level: ExplanationLevel) => setStore("explanationLevel", level),
+      reset: () => setStore("explanationLevel", DEFAULT_EXPLANATION_LEVEL),
     },
     context: {
       items: createMemo(() => store.context.items),

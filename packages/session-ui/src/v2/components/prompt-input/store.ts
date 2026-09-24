@@ -10,20 +10,23 @@ import type {
   PromptInputV2Prompt,
 } from "./types"
 
-export type PromptInputV2StoreTuple = [
-  Store<PromptInputV2PersistedState> | Accessor<Store<PromptInputV2PersistedState>>,
-  SetStoreFunction<PromptInputV2PersistedState>,
+export type PromptInputV2StoreTuple<T extends PromptInputV2PersistedState = PromptInputV2PersistedState> = [
+  Store<T> | Accessor<Store<T>>,
+  SetStoreFunction<T>,
 ]
 
-export type PromptInputV2StoreInput = PromptInputV2StoreTuple | Accessor<PromptInputV2StoreTuple>
+export type PromptInputV2StoreInput<T extends PromptInputV2PersistedState = PromptInputV2PersistedState> =
+  | PromptInputV2StoreTuple<T>
+  | Accessor<PromptInputV2StoreTuple<T>>
 
-export function createPromptInputV2Store(input: PromptInputV2StoreInput) {
+export function createPromptInputV2Store<T extends PromptInputV2PersistedState>(input: PromptInputV2StoreInput<T>) {
   const tuple = () => (typeof input === "function" ? input() : input)
   const store = () => {
     const value = tuple()[0]
     return typeof value === "function" ? value() : value
   }
-  const setStore = () => tuple()[1]
+  // This adapter writes only base prompt-input fields, preserving fields added by compatible stores.
+  const setStore = () => tuple()[1] as unknown as SetStoreFunction<PromptInputV2PersistedState>
 
   return {
     get state() {

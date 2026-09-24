@@ -45,6 +45,7 @@ let promptValue: Prompt = [{ type: "text", content: "ls", start: 0, end: 2 }]
 const [promptStore, setPromptStore] = createStore<PromptStore>({
   prompt: promptValue,
   cursor: 0,
+  explanationLevel: "beginner",
   context: { items: [] },
 })
 const prompt = {
@@ -56,6 +57,11 @@ const prompt = {
   model: {
     current: () => undefined,
     set: () => undefined,
+  },
+  explanationLevel: {
+    current: () => "beginner" as const,
+    set: () => undefined,
+    reset: () => undefined,
   },
   reset: () => undefined,
   set: () => undefined,
@@ -135,6 +141,7 @@ beforeAll(async () => {
   mock.module("@opencode-ai/ui/toast", () => ({
     Toast: { Region: () => null },
     showToast: () => 0,
+    toaster: { dismiss: () => undefined },
   }))
 
   mock.module("@opencode-ai/core/util/encode", () => ({
