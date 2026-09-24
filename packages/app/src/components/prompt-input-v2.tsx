@@ -419,6 +419,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     },
   })
   Object.defineProperty(controller, "model", { get: () => props.controls.model })
+  Object.defineProperty(controller, "prompt", { get: () => prompt })
 
   command.register("prompt-input", () => [
     {
@@ -475,7 +476,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     ),
   )
 
-  return { ...controller, model: props.controls.model, prompt }
+  return controller as PromptInputV2ComposerController
 }
 
 function PromptInputV2ModelControl(props: {
