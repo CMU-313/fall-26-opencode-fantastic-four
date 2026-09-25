@@ -3,6 +3,7 @@ export * as SessionWalkthrough from "./walkthrough"
 import { LLM, type Model } from "@opencode-ai/llm"
 import { Effect, Schema } from "effect"
 import type { File } from "../file"
+import type { SessionMessage } from "./message"
 
 const Text = Schema.String.check(Schema.isPattern(/\S/))
 
@@ -46,6 +47,39 @@ export const generate = Effect.fn("SessionWalkthrough.generate")(function* (inpu
       return new Entry({ file: diff.path, ...response.object })
     }),
   )
+})
+
+/** Messages must be in chronological order and Snapshot must be bound to their session's Location. */
+export const fromMessages = Effect.fn("SessionWalkthrough.fromMessages")(function* (input: {
+  messages: readonly SessionMessage.Message[]
+  model: Model
+}) {
+  const completed = input.messages.filter(
+    (message): message is SessionMessage.Assistant =>
+      message.type === "assistant" && !!message.snapshot?.start && !!message.snapshot?.end,
+  )
+  const from = completed[0]?.snapshot?.start
+  const to = completed.at(-1)?.snapshot?.end
+  const paths = new Set(completed.flatMap((message) => message.snapshot?.files ?? []))
+  if (!from || !to || from === to || paths.size === 0) return []
+
+  const { Snapshot } = yield* Effect.promise(() => import("../snapshot"))
+  const snapshot = yield* Snapshot.Service
+  // Diff the net change before selecting tracked paths: explicit paths can include reverted files.
+  const diffs = (yield* snapshot.diff({ from: Snapshot.ID.make(from), to: Snapshot.ID.make(to) })).filter((diff) =>
+    paths.has(diff.path),
+  )
+  // Ignore unfinished turns and later prompts when explaining the completed changes.
+  const context = input.messages
+    .slice(0, input.messages.indexOf(completed.at(-1)!) + 1)
+    .flatMap((message) => {
+      if (message.type === "user") return [`User: ${message.text}`]
+      if (message.type === "assistant")
+        return message.content.flatMap((part) => (part.type === "text" ? [`Assistant: ${part.text}`] : []))
+      return []
+    })
+    .join("\n")
+  return yield* generate({ diffs, context, model: input.model })
 })
 
 export function buildPrompt(input: { diff: File.Diff; context: string }) {
