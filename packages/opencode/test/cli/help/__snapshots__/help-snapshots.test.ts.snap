@@ -534,7 +534,11 @@ Options:
       --permissions, --tools  comma-separated list of permissions to allow (default: all).
                               Available: "bash, read, edit, glob, grep, webfetch, task, todowrite,
                               websearch, lsp, skill"                                        [string]
-  -m, --model                 model to use in the format of provider/model                  [string]"
+  -m, --model                 model to use in the format of provider/model                  [string]
+      --allow-paths           comma-separated list of paths to allow access to (default: all)
+                                                                                            [string]
+      --deny-paths            comma-separated list of paths to deny access to (default: none)
+                                                                                            [string]"
 `;
 
 exports[`opencode CLI help-text snapshots every documented command emits stable help text: opencode agent list --help 1`] = `
