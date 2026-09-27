@@ -32,6 +32,8 @@ import {
   createPromptInputV2State,
   type PromptInputV2Interaction,
 } from "@opencode-ai/session-ui/v2/prompt-input/interaction"
+import { ExplanationLevelSelector } from "@/components/explanation-level-selector"
+import type { PromptInputState } from "@/components/prompt-input/contracts"
 
 export type PromptInputV2ComposerProps = {
   class?: string
@@ -42,6 +44,7 @@ export type PromptInputV2ComposerProps = {
 export type PromptInputV2ControllerProps = Omit<PromptInputProps, "class" | "submission">
 export type PromptInputV2ComposerController = PromptInputV2Interaction & {
   readonly model: PromptInputProps["controls"]["model"]
+  readonly prompt: PromptInputState
 }
 
 export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
@@ -59,19 +62,26 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
         attachKeybind={command.keybindParts("file.attach")}
         attachShortcut={command.keybind("file.attach")}
         modelControl={
-          <PromptInputV2ModelControl
-            loading={props.controller.model.loading}
-            paid={props.controller.model.paid}
-            title={language.t("command.model.choose")}
-            keybind={command.keybindParts("model.choose")}
-            model={props.controller.model.selection}
-            providerID={props.controller.model.selection.current()?.provider?.id}
-            modelName={props.controller.model.selection.current()?.name ?? language.t("dialog.model.select.title")}
-            onClose={props.controller.restoreFocus}
-            onUnpaidClick={() =>
-              dialog.show(() => <DialogSelectModelUnpaidV2 model={props.controller.model.selection} />)
-            }
-          />
+          <>
+            <PromptInputV2ModelControl
+              loading={props.controller.model.loading}
+              paid={props.controller.model.paid}
+              title={language.t("command.model.choose")}
+              keybind={command.keybindParts("model.choose")}
+              model={props.controller.model.selection}
+              providerID={props.controller.model.selection.current()?.provider?.id}
+              modelName={props.controller.model.selection.current()?.name ?? language.t("dialog.model.select.title")}
+              onClose={props.controller.restoreFocus}
+              onUnpaidClick={() =>
+                dialog.show(() => <DialogSelectModelUnpaidV2 model={props.controller.model.selection} />)
+              }
+            />
+            <ExplanationLevelSelector
+              state={props.controller.prompt}
+              variant="v2"
+              onSelect={props.controller.restoreFocus}
+            />
+          </>
         }
       />
     </div>
@@ -409,6 +419,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     },
   })
   Object.defineProperty(controller, "model", { get: () => props.controls.model })
+  Object.defineProperty(controller, "prompt", { get: () => prompt })
 
   command.register("prompt-input", () => [
     {
