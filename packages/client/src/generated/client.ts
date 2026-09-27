@@ -17,6 +17,8 @@ import type {
   SessionsSwitchModelOutput,
   SessionsPromptInput,
   SessionsPromptOutput,
+  SessionsWalkthroughInput,
+  SessionsWalkthroughOutput,
   SessionsCompactInput,
   SessionsCompactOutput,
   SessionsWaitInput,
@@ -375,6 +377,17 @@ export function make(options: ClientOptions) {
             body: { id: input["id"], prompt: input["prompt"], delivery: input["delivery"], resume: input["resume"] },
             successStatus: 200,
             declaredStatuses: [409, 404, 400, 401],
+            empty: false,
+          },
+          requestOptions,
+        ).then((value) => value.data),
+      walkthrough: (input: SessionsWalkthroughInput, requestOptions?: RequestOptions) =>
+        request<{ readonly data: SessionsWalkthroughOutput }>(
+          {
+            method: "POST",
+            path: `/api/session/${encodeURIComponent(input.sessionID)}/walkthrough`,
+            successStatus: 200,
+            declaredStatuses: [404, 503, 400, 401],
             empty: false,
           },
           requestOptions,

@@ -12,6 +12,7 @@ import {
   UnknownError,
 } from "@opencode-ai/protocol/errors"
 import { AbsolutePath } from "@opencode-ai/core/schema"
+import { requestWalkthrough } from "../session-walkthrough"
 
 const DefaultSessionsLimit = 50
 const DefaultSessionHistoryLimit = 50
@@ -166,6 +167,31 @@ export const SessionHandler = HttpApiBuilder.group(Api, "server.session", (handl
                   ),
                 ),
               ),
+          }
+        }),
+      )
+      .handle(
+        "session.walkthrough",
+        Effect.fn(function* (ctx) {
+          return {
+            data: yield* requestWalkthrough(ctx.params.sessionID).pipe(
+              Effect.catchTag("Session.NotFoundError", (error) =>
+                Effect.fail(new SessionNotFoundError({ sessionID: error.sessionID, message: error.message })),
+              ),
+              Effect.catch((error): Effect.Effect<never, SessionNotFoundError | ServiceUnavailableError> => {
+                if (error instanceof SessionNotFoundError) return Effect.fail(error)
+                return Effect.logError("Failed to generate session walkthrough", { cause: error }).pipe(
+                  Effect.andThen(
+                    Effect.fail(
+                      new ServiceUnavailableError({
+                        message: "The learning walkthrough could not be generated. Please try again.",
+                        service: "session.walkthrough",
+                      }),
+                    ),
+                  ),
+                )
+              }),
+            ),
           }
         }),
       )
