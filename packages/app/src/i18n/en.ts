@@ -55,6 +55,8 @@ export const dict = {
   "command.tab.reopenClosed": "Reopen closed tab",
   "command.context.addSelection": "Add selection to context",
   "command.context.addSelection.description": "Add selected lines from the current file",
+  "command.context.explainSelection": "Explain selected code",
+  "command.context.explainSelection.description": "Explain the selected lines at the active experience level",
   "command.input.focus": "Focus input",
   "command.terminal.toggle": "Toggle terminal",
   "command.fileTree.toggle": "Toggle file tree",
@@ -262,6 +264,7 @@ export const dict = {
   "prompt.explanationLevel.beginner": "Beginner",
   "prompt.explanationLevel.intermediate": "Intermediate",
   "prompt.explanationLevel.advanced": "Advanced",
+  "prompt.explainSelection.request": "Explain the selected code.",
   "session.child.promptDisabled": "Subagent sessions cannot be prompted.",
   "session.child.backToParent": "Back to main session.",
 

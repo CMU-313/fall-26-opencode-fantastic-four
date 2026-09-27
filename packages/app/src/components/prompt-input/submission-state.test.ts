@@ -14,11 +14,36 @@ describe("prompt submission state", () => {
         target: workspace,
         prompt: workspace.current(),
         context: [],
+        explanationRequested: false,
       })
       submission.retarget(session)
 
       expect(session.explanationLevel.current()).toBe("advanced")
       expect(workspace.explanationLevel.current()).toBe("beginner")
+      dispose()
+    })
+  })
+
+  test("moves and restores a one-shot explanation request", () => {
+    createRoot((dispose) => {
+      const workspace = createPromptState()
+      const session = createPromptState()
+      workspace.explanationRequest.start()
+
+      const submission = createPromptSubmissionState({
+        target: workspace,
+        prompt: workspace.current(),
+        context: [],
+        explanationRequested: true,
+      })
+      submission.retarget(session)
+      submission.clear()
+
+      expect(workspace.explanationRequest.current()).toBe(false)
+      expect(session.explanationRequest.current()).toBe(false)
+
+      submission.restore()
+      expect(session.explanationRequest.current()).toBe(true)
       dispose()
     })
   })

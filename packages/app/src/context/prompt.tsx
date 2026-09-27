@@ -160,6 +160,11 @@ export const { use: usePrompt, provider: PromptProvider } = createSimpleContext(
         set: (level: ExplanationLevel) => session().explanationLevel.set(level),
         reset: () => session().explanationLevel.reset(),
       },
+      explanationRequest: {
+        current: withSuspense(() => session().explanationRequest.current()),
+        start: () => session().explanationRequest.start(),
+        reset: () => session().explanationRequest.reset(),
+      },
       context: {
         items: withSuspense(() => session().context.items()),
         add: (item: ContextItem) => session().context.add(item),
