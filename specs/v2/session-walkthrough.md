@@ -39,4 +39,28 @@ Callers that already have `File.Diff[]` can call `SessionWalkthrough.generate({ 
 - Only user text and assistant text are included from session messages; reasoning and tool output are omitted. Context is capped at 8,000 characters and each patch at 16,000, with explicit truncation markers. Binary or unavailable patches are described with limited evidence.
 - Invalid model output and provider errors fail the effect rather than returning fabricated or partial results. Snapshot errors also propagate to the caller.
 
-This increment supplies core data generation. It does not add a UI, HTTP endpoint, persistence, or an automatic model call after every session. Callers choose when to generate a walkthrough and which model to use. The structural tests use deterministic provider responses; explanation quality still depends on the selected model.
+The core generator supplies data on demand and does not persist walkthroughs or automatically call a model after every session. Direct callers choose when to generate a walkthrough and which model to use. The structural tests use deterministic provider responses; explanation quality still depends on the selected model.
+
+## Requesting a walkthrough
+
+In an existing session connected to a V2 server, select **Learning walkthrough** from the session commands or use `/walkthrough`. The app opens a dialog and sends `POST /api/session/:sessionID/walkthrough` only after this action. The response is `{ data: Entry[] }`.
+
+The server loads the selected session's chronological message history, excludes messages at and after a staged revert boundary, and resolves the session's configured model in its Location. The request does not admit a prompt, wake or interrupt execution, change the model, or alter messages and snapshots. During active execution, the walkthrough covers completed snapshots available when the request reads history.
+
+The dialog displays loading, empty, and error states, supports explicit retries, and cancels its request when closed or when the selected session changes. The composer draft remains intact. UI strings use English i18n keys with the existing fallback for other locales. Legacy V1 sessions do not enable this action because the generator requires V2 session snapshots.
+
+The app currently vendors an older client. Its server adapter supplies a typed, authenticated walkthrough request using the configured platform fetch and validates the response with the canonical Schema contract. The workspace client is regenerated with the new endpoint for other consumers.
+
+Focused validation:
+
+```sh
+# packages/core
+bun test test/session-walkthrough.test.ts test/session-walkthrough-snapshot.test.ts --timeout 30000
+
+# packages/server
+bun test --preload ../core/test/preload.ts test/session-walkthrough.test.ts --timeout 30000
+
+# packages/app
+bun test --conditions=solid --preload ./happydom.ts src/utils/server.test.ts src/utils/server-compat.test.ts
+bunx playwright test e2e/regression/session-walkthrough.spec.ts --workers=1
+```
