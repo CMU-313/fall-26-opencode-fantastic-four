@@ -22,6 +22,8 @@ export function createPromptSubmissionState(input: {
     },
     retarget(next: PromptTarget) {
       input.context.forEach(next.context.add)
+      next.explanationLevel.set(target.explanationLevel.current())
+      if (initial !== next) initial.explanationLevel.reset()
       target = next
     },
     current: (value: PromptTarget) => target === value,
