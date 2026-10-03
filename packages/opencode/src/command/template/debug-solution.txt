@@ -1,0 +1,5 @@
+The student has explicitly asked to stop hint-based assistance and receive the complete solution to the debugging problem described below.
+
+Use the conversation, available files, diagnostics, and tool results to explain the root cause and provide a complete, actionable correction. Include corrected code or exact edits when appropriate. Clearly distinguish verified facts from assumptions, and verify the proposed correction when tools are available.
+
+$ARGUMENTS
