@@ -150,8 +150,9 @@ export function buildRequestParts(input: BuildRequestPartsInput) {
           id: Identifier.ascending("part"),
           type: "text" as const,
           text: [
-            "Explain the selected code in the attached file selection.",
+            `Start with the heading "Explanation level: ${input.explanationLevel}". Explain the selected code in the attached file selections.`,
             "Do not edit or propose edits to the selected file.",
+            "For a tiny selection, explain only what can be inferred and ask for surrounding context when needed.",
             getExplanationInstructions(input.explanationLevel),
           ].join(" "),
           synthetic: true,

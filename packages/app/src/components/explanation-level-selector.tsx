@@ -27,7 +27,10 @@ export function ExplanationLevelSelector(props: ExplanationLevelSelectorProps) {
   }
 
   return (
-    <div data-component="explanation-level-selector">
+    <div data-component="explanation-level-selector" class="flex items-center gap-1">
+      <span class="text-12-regular text-text-weak whitespace-nowrap">
+        {language.t("prompt.explanationLevel.displayLabel")}
+      </span>
       <Switch>
         <Match when={props.variant === "v2"}>
           <SelectV2

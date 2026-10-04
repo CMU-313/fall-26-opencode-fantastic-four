@@ -1,9 +1,16 @@
 export const APP_ENGLISH_FALLBACK_KEYS = [
   "prompt.explanationLevel.label",
+  "prompt.explanationLevel.displayLabel",
   "prompt.explanationLevel.beginner",
   "prompt.explanationLevel.intermediate",
   "prompt.explanationLevel.advanced",
-  "prompt.explainSelection.request",
+  "prompt.explainSelection.requestAtLevel",
+  "prompt.explainSelection.moreActions",
+  "prompt.explainSelection.regenerate",
+  "prompt.explanation.error.tooLarge.title",
+  "prompt.explanation.error.tooLarge.description",
+  "prompt.explanation.warning.changed.title",
+  "prompt.explanation.warning.changed.description",
   "command.context.explainSelection",
   "command.context.explainSelection.description",
 ] as const

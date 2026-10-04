@@ -464,6 +464,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
             commentID: item.commentID,
             commentOrigin: item.commentOrigin,
             preview: item.preview,
+            selectionSnapshot: item.selectionSnapshot,
           }),
         )
         controller.dispatch({ type: "mode.normal" })

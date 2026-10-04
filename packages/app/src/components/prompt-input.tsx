@@ -1126,6 +1126,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             commentID: item.commentID,
             commentOrigin: item.commentOrigin,
             preview: item.preview,
+            selectionSnapshot: item.selectionSnapshot,
           })
         }
 

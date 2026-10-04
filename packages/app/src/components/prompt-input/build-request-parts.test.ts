@@ -34,6 +34,8 @@ describe("buildRequestParts", () => {
 
     expect(text).toContain(getExplanationInstructions("beginner"))
     expect(text).toContain("Explain the selected code")
+    expect(text).toContain("Explanation level: beginner")
+    expect(text).toContain("ask for surrounding context")
     expect(text).toContain("Do not edit")
     expect(file?.type === "file" ? file.url : "").toBe("file:///repo/src/example.ts?start=4&end=8")
   })
