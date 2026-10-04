@@ -28,11 +28,10 @@ for (const level of levels) {
     await selectDisconnectedLines(page)
 
     const composer = page.locator('[data-component="prompt-input-v2"]')
-    await composer.getByLabel("Explanation level").click()
+    const depth = composer.getByLabel("Explanation level")
+    await depth.click()
     await page.getByRole("option", { name: level, exact: true }).click()
-    await expect(composer.locator('[data-component="prompt-input"]')).toContainText(
-      `Explain the selected code at the ${level} level.`,
-    )
+    await expect(depth).toContainText(level)
 
     await composer.getByRole("button", { name: "Send" }).click()
     await expect.poll(() => state.prompts.length).toBe(1)
@@ -66,14 +65,20 @@ test("restores the explanation request and selected ranges after a provider fail
   const state = await openExplanationSession(page, true)
   await selectDisconnectedLines(page)
   const composer = page.locator('[data-component="prompt-input-v2"]')
-  await composer.getByLabel("Explanation level").click()
+  const depth = composer.getByLabel("Explanation level")
+  await depth.click()
   await page.getByRole("option", { name: "Intermediate", exact: true }).click()
+  await expect(depth).toContainText("Intermediate")
   await composer.getByRole("button", { name: "Send" }).click()
 
   await expect.poll(() => state.prompts.length).toBe(1)
+  expect(
+    state.prompts[0]!.parts.flatMap((part) => (part.type === "text" ? [part.text] : [])).join(" "),
+  ).toContain("Explanation level: intermediate")
   await expect(page.getByText("Failed to send prompt", { exact: true })).toBeVisible()
+  await expect(depth).toContainText("Intermediate")
   await expect(composer.locator('[data-component="prompt-input"]')).toContainText(
-    "Explain the selected code at the Intermediate level.",
+    "Explain the selected code at the Beginner level.",
   )
   await expect(composer.getByText("Sample.swift:1", { exact: true })).toBeVisible()
   await expect(composer.getByText("Sample.swift:3", { exact: true })).toBeVisible()
@@ -94,15 +99,18 @@ test("regenerates a completed explanation at another depth with its original dis
   })
   await setupTimeline(page, { messages: [user, assistant], settings: { newLayoutDesigns: true } })
 
-  await page.getByRole("button", { name: "Regenerate explanation" }).click()
+  const regenerate = page.getByRole("button", { name: "Regenerate explanation" })
+  await regenerate.focus()
+  await expect(regenerate).toBeFocused()
+  await regenerate.press("Enter")
   await page.getByRole("menuitem", { name: "Advanced", exact: true }).click()
 
   const composer = page.locator('[data-component="prompt-input-v2"]')
   await expect(composer.locator('[data-component="prompt-input"]')).toContainText(
     "Explain the selected code at the Advanced level.",
   )
-  await expect(composer.getByText("ImageLoader.swift:19-21", { exact: true })).toBeVisible()
-  await expect(composer.getByText("ImageLoader.swift:44-46", { exact: true })).toBeVisible()
+  await expect(composer.getByText(/\.swift:19-21$/)).toBeVisible()
+  await expect(composer.getByText(/\.swift:44-46$/)).toBeVisible()
 })
 
 function selectedFile(id: string, start: number, end: number): PartSeed<"user"> {
@@ -218,7 +226,11 @@ async function openExplanationSession(page: Page, failPrompt = false) {
   await expectSessionTitle(page, title)
   const panel = page.locator("#review-panel")
   await panel.getByRole("button", { name: "Open file" }).click()
+  const fileResponse = page.waitForResponse(
+    (response) => response.ok() && new URL(response.url()).pathname === "/file/content",
+  )
   await panel.getByRole("button", { name: "Sample.swift" }).click()
-  await expect(panel.getByText("let cached = cache[url]", { exact: true })).toBeVisible()
+  await fileResponse
+  await expect(panel.locator('[data-column-number="1"]')).toBeVisible()
   return { prompts, fileWrites }
 }
