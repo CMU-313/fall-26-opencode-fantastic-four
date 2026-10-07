@@ -66,6 +66,13 @@ export function buildPathPermissions(allowPaths: string[] | undefined, denyPaths
 }
 
 
+// Parses a comma-separated path-pattern string (from a flag or prompt) into
+// an array of trimmed patterns, or undefined if the input is empty/absent.
+export function parsePathInput(input: string | undefined): string[] | undefined {
+  if (!input) return undefined
+  return input.split(",").map((p) => p.trim())
+}
+
 const AgentCreateCommand = effectCmd({
   command: "create",
   describe: "create a new agent",
@@ -231,11 +238,31 @@ const AgentCreateCommand = effectCmd({
       // Build permissions config
       const permissions = buildPermissions(selected)
 
-      // Parse path-based restrictions from flags (Sprint 1: flags only, no interactive prompt yet)
-      const allowPathsInput = args["allow-paths"] as string | undefined
-      const denyPathsInput = args["deny-paths"] as string | undefined
-      const allowPaths = allowPathsInput ? allowPathsInput.split(",").map((p) => p.trim()) : undefined
-      const denyPaths = denyPathsInput ? denyPathsInput.split(",").map((p) => p.trim()) : undefined
+      // Get path restrictions (from flags if provided, otherwise prompt interactively)
+      let allowPaths: string[] | undefined
+      if (args["allow-paths"] !== undefined) {
+        allowPaths = parsePathInput(args["allow-paths"] as string)
+      } else if (!isFullyNonInteractive) {
+        const allowPathsResult = await prompts.text({
+          message: "Paths to allow (comma-separated globs, leave empty for none)",
+          placeholder: "src/**",
+        })
+        if (prompts.isCancel(allowPathsResult)) throw new UI.CancelledError()
+        allowPaths = parsePathInput(allowPathsResult)
+      }
+
+      let denyPaths: string[] | undefined
+      if (args["deny-paths"] !== undefined) {
+        denyPaths = parsePathInput(args["deny-paths"] as string)
+      } else if (!isFullyNonInteractive) {
+        const denyPathsResult = await prompts.text({
+          message: "Paths to deny (comma-separated globs, leave empty for none)",
+          placeholder: "solutions/**",
+        })
+        if (prompts.isCancel(denyPathsResult)) throw new UI.CancelledError()
+        denyPaths = parsePathInput(denyPathsResult)
+      }
+
       const pathPermissions = buildPathPermissions(allowPaths, denyPaths)
 
 
