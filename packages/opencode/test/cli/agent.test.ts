@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test"
-import { buildPermissions, AVAILABLE_PERMISSIONS, buildPathPermissions } from "../../src/cli/cmd/agent"
+import { buildPermissions, buildPathPermissions, AVAILABLE_PERMISSIONS, parsePathInput } from "../../src/cli/cmd/agent"
 import { PermissionV2 } from "@opencode-ai/core/permission"
+
 
 
 // testing the new permissions format (buildPermissions function)
@@ -96,3 +97,27 @@ describe("agent create permission merging", () => {
     expect(bashResult.effect).toEqual("deny")
   })
 })
+
+
+// test to make sure prompting sequence for no path flags is correct
+describe("parsePathInput", () => {
+    test("splits comma-separated input and trims whitespace", () => {
+      const res = parsePathInput("src/**, solutions/**,  test/**")
+      expect(res).toEqual(["src/**", "solutions/**", "test/**"])
+    })
+  
+    test("returns undefined for undefined input", () => {
+      const res = parsePathInput(undefined)
+      expect(res).toBeUndefined()
+    })
+  
+    test("returns undefined for empty string input", () => {
+      const res = parsePathInput("")
+      expect(res).toBeUndefined()
+    })
+  
+    test("handles a single path with no commas", () => {
+      const res = parsePathInput("src/**")
+      expect(res).toEqual(["src/**"])
+    })
+  })
