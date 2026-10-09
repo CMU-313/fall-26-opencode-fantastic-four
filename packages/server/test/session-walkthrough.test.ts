@@ -171,3 +171,38 @@ test("a session reverted to its first prompt has no changes to explain", async (
   )
   expect(result).toEqual([])
 })
+
+test("missing sessions fail before reading history or resolving a model", async () => {
+  const error = new SessionV2.NotFoundError({ sessionID: session.id })
+  expect(
+    await Effect.runPromise(
+      requestWalkthrough(session.id).pipe(
+        Effect.provide(Layer.mock(SessionV2.Service, { revert, get: () => Effect.fail(error) })),
+        Effect.provide(Layer.mock(SessionRunnerModel.Service, {})),
+        Effect.provide(Layer.mock(Snapshot.Service, {})),
+        Effect.flip,
+      ),
+    ),
+  ).toEqual(error)
+})
+
+test("model resolution failures leave the session and snapshots untouched", async () => {
+  const error = new SessionRunnerModel.ModelNotSelectedError({ sessionID: session.id })
+  expect(
+    await Effect.runPromise(
+      requestWalkthrough(session.id).pipe(
+        Effect.provide(
+          Layer.mock(SessionV2.Service, {
+            revert,
+            get: () => Effect.succeed(session),
+            messages: () =>
+              Effect.succeed([user("msg_first", "Trim names"), assistant("msg_a", "before", "after", "greet.ts")]),
+          }),
+        ),
+        Effect.provide(SessionRunnerModel.layerWith(() => Effect.fail(error))),
+        Effect.provide(Layer.mock(Snapshot.Service, {})),
+        Effect.flip,
+      ),
+    ),
+  ).toEqual(error)
+})
