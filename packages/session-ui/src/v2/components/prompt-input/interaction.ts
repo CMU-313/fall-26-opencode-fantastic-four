@@ -53,8 +53,8 @@ export function createPromptInputV2State() {
   return createStore(createPromptInputV2InteractionState())
 }
 
-export function createPromptInputV2Controller(input: {
-  store: PromptInputV2StoreInput
+export function createPromptInputV2Controller<T extends PromptInputV2PersistedState>(input: {
+  store: PromptInputV2StoreInput<T>
   state?: ReturnType<typeof createPromptInputV2State>
   identity?: Accessor<unknown>
   history?: PromptInputV2History
