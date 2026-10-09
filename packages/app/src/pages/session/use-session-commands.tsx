@@ -290,6 +290,29 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     addSelectionToContext(path, selectionFromLines(range))
   }
 
+  const explainSelection = () => {
+    const tab = activeFileTab()
+    if (!tab) return
+
+    const path = file.pathFromTab(tab)
+    if (!path) return
+
+    const range = file.selectedLines(path) as SelectedLineRange | null | undefined
+    if (!range) {
+      showToast({
+        title: language.t("toast.context.noLineSelection.title"),
+        description: language.t("toast.context.noLineSelection.description"),
+      })
+      return
+    }
+
+    const text = language.t("prompt.explainSelection.request")
+    addSelectionToContext(path, selectionFromLines(range))
+    prompt.explanationRequest.start()
+    prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
+    focusInput()
+  }
+
   const openTerminal = () => {
     if (terminal.all().length > 0) terminal.new({ focus: true })
     if (terminal.all().length === 0) terminal.requestFocus()
@@ -528,6 +551,13 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       keybind: "mod+shift+l",
       disabled: !canAddSelectionContext(),
       onSelect: addSelection,
+    }),
+    contextCommand({
+      id: "context.explainSelection",
+      title: language.t("command.context.explainSelection"),
+      description: language.t("command.context.explainSelection.description"),
+      disabled: !canAddSelectionContext(),
+      onSelect: explainSelection,
     }),
   ]
 

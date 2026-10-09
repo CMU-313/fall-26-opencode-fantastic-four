@@ -23,6 +23,7 @@ import { createPromptSubmissionState } from "./submission-state"
 import { normalizeSessionInfo } from "@/utils/session"
 import { Event } from "@opencode-ai/schema/event"
 import { blobDataUrl } from "@/utils/draft-store"
+import type { ExplanationLevel } from "@/learning/explanation-level"
 
 type PendingPrompt = {
   abort: AbortController
@@ -39,6 +40,7 @@ export type FollowupDraft = {
   agent: string
   model: { providerID: string; modelID: string }
   variant?: string
+  explanationLevel?: ExplanationLevel
 }
 
 type FollowupSendInput = {
@@ -125,6 +127,7 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
     sessionID: input.draft.sessionID,
     messageID,
     sessionDirectory: input.draft.sessionDirectory,
+    explanationLevel: input.draft.explanationLevel,
   })
 
   const message: Message = {
@@ -323,6 +326,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       target,
       prompt: target.current(),
       context: target.context.items().slice(),
+      explanationRequested: target.explanationRequest.current(),
     })
     const currentPrompt = submission.prompt
     const context = submission.context
@@ -454,6 +458,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       agent,
       model,
       variant,
+      explanationLevel: submission.explanationRequested ? submission.target().explanationLevel.current() : undefined,
     }
 
     const clearInput = () => {
