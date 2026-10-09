@@ -92,7 +92,7 @@ const layer = Layer.effect(
       }
       commands[Default.DEBUG_HINT] = {
         name: Default.DEBUG_HINT,
-        description: "give a debugging hint without revealing the solution",
+        description: "give the next progressive debugging hint without revealing the solution",
         source: "command",
         template: PROMPT_DEBUG_HINT,
         hints: hints(PROMPT_DEBUG_HINT),
