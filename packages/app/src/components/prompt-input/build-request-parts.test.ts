@@ -51,6 +51,45 @@ describe("buildRequestParts", () => {
     expect(text).not.toContain(getExplanationInstructions("beginner"))
   })
 
+  test("keeps disconnected selections as separate read-only file ranges", () => {
+    const context = [
+      {
+        key: "ctx:first",
+        type: "file" as const,
+        path: "src/example.ts",
+        selection: { startLine: 2, startChar: 0, endLine: 4, endChar: 0 },
+      },
+      {
+        key: "ctx:second",
+        type: "file" as const,
+        path: "src/example.ts",
+        selection: { startLine: 10, startChar: 0, endLine: 12, endChar: 0 },
+      },
+    ]
+    const before = structuredClone(context)
+    const result = buildRequestParts({
+      prompt: [{ type: "text", content: "Explain the selected code.", start: 0, end: 26 }],
+      context,
+      images: [],
+      text: "Explain the selected code.",
+      messageID: "msg_disconnected",
+      sessionID: "ses_explanation",
+      sessionDirectory: "/repo",
+      explanationLevel: "intermediate",
+    })
+    const files = result.requestParts.flatMap((part) => (part.type === "file" ? [part.url] : []))
+    const instructions = result.requestParts
+      .flatMap((part) => (part.type === "text" && part.synthetic ? [part.text] : []))
+      .join(" ")
+
+    expect(files).toEqual([
+      "file:///repo/src/example.ts?start=2&end=4",
+      "file:///repo/src/example.ts?start=10&end=12",
+    ])
+    expect(instructions).toContain("Do not edit or propose edits to the selected file.")
+    expect(context).toEqual(before)
+  })
+
   test("does not add explanation instructions to an ordinary prompt", () => {
     const result = buildRequestParts({
       prompt: [{ type: "text", content: "Fix this bug", start: 0, end: 12 }],
