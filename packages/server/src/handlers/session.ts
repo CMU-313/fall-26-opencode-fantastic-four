@@ -175,6 +175,7 @@ export const SessionHandler = HttpApiBuilder.group(Api, "server.session", (handl
         Effect.fn(function* (ctx) {
           return {
             data: yield* requestWalkthrough(ctx.params.sessionID).pipe(
+              Effect.provideService(SessionV2.Service, session),
               Effect.catchTag("Session.NotFoundError", (error) =>
                 Effect.fail(new SessionNotFoundError({ sessionID: error.sessionID, message: error.message })),
               ),
