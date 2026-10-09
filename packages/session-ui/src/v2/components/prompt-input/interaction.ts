@@ -53,8 +53,8 @@ export function createPromptInputV2State() {
   return createStore(createPromptInputV2InteractionState())
 }
 
-export function createPromptInputV2Controller(input: {
-  store: PromptInputV2StoreInput
+export function createPromptInputV2Controller<T extends PromptInputV2PersistedState>(input: {
+  store: PromptInputV2StoreInput<T>
   state?: ReturnType<typeof createPromptInputV2State>
   identity?: Accessor<unknown>
   history?: PromptInputV2History
@@ -306,7 +306,7 @@ export function createPromptInputV2Controller(input: {
       return draft.state.context.items.find((item) => item.key === id)
     },
     comments() {
-      return draft.state.context.items.filter((item) => !!item.comment?.trim())
+      return draft.state.context.items
     },
     attachments(): PromptInputV2Attachment[] {
       return draft.state.prompt.filter((part): part is PromptInputV2Attachment => part.type === "image")
