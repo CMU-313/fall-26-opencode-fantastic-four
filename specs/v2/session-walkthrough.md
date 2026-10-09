@@ -49,6 +49,8 @@ The server loads the selected session's chronological message history, excludes 
 
 The dialog displays loading, empty, and error states, supports explicit retries, and cancels its request when closed or when the selected session changes. The composer draft remains intact. UI strings use English i18n keys with the existing fallback for other locales. Legacy V1 sessions do not enable this action because the generator requires V2 session snapshots.
 
+Each changed file appears in a separate bordered section with its file name, what changed, why it changed, and programming concepts. An empty concepts array displays an explicit message instead of a blank list. Loading and empty results use status announcements; generation failures use an alert and a retry button. Browser regression tests cover single-file and multiple-file results, loading, empty results, retries, and preservation of the composer draft.
+
 The app currently vendors an older client. Its server adapter supplies a typed, authenticated walkthrough request using the configured platform fetch and validates the response with the canonical Schema contract. The workspace client is regenerated with the new endpoint for other consumers.
 
 Focused validation:

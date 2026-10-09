@@ -2,7 +2,7 @@ import type { SessionWalkthrough } from "@opencode-ai/schema/session-walkthrough
 import { Dialog } from "@opencode-ai/ui/dialog"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { Button } from "@opencode-ai/ui/button"
-import { createEffect, For, Match, onCleanup, onMount, Switch } from "solid-js"
+import { createEffect, For, Match, onCleanup, onMount, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
 
@@ -47,12 +47,12 @@ export function DialogWalkthrough(props: {
             <Button onClick={request}>{language.t("walkthrough.retry")}</Button>
           </Match>
           <Match when={state.entries.length === 0}>
-            <p>{language.t("walkthrough.empty")}</p>
+            <p role="status">{language.t("walkthrough.empty")}</p>
           </Match>
           <Match when={state.entries.length > 0}>
             <For each={state.entries}>
               {(entry) => (
-                <article class="flex flex-col gap-3">
+                <article aria-label={entry.file} class="flex flex-col gap-3 rounded-lg border border-border-base p-4">
                   <h3 class="font-mono text-text-strong break-all">{entry.file}</h3>
                   <dl class="flex flex-col gap-2">
                     <dt class="font-medium">{language.t("walkthrough.whatChanged")}</dt>
@@ -61,9 +61,11 @@ export function DialogWalkthrough(props: {
                     <dd class="whitespace-pre-wrap">{entry.whyChanged}</dd>
                     <dt class="font-medium">{language.t("walkthrough.concepts")}</dt>
                     <dd>
-                      <ul class="list-disc pl-5">
-                        <For each={entry.concepts}>{(concept) => <li>{concept}</li>}</For>
-                      </ul>
+                      <Show when={entry.concepts.length > 0} fallback={<p>{language.t("walkthrough.noConcepts")}</p>}>
+                        <ul class="list-disc pl-5">
+                          <For each={entry.concepts}>{(concept) => <li>{concept}</li>}</For>
+                        </ul>
+                      </Show>
                     </dd>
                   </dl>
                 </article>

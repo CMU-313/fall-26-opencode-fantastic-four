@@ -10,6 +10,7 @@ export const dict = {
   "walkthrough.whatChanged": "What changed",
   "walkthrough.whyChanged": "Why it changed",
   "walkthrough.concepts": "Programming concepts",
+  "walkthrough.noConcepts": "No programming concepts identified for this change.",
 
   ...DESKTOP_NATIVE_ENGLISH,
   "command.category.suggested": "Suggested",
