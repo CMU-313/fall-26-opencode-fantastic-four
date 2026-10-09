@@ -23,6 +23,7 @@ type LineCommentControllerV2Props<T extends LineCommentShape> = {
   onUpdate?: (input: { id: string; comment: string; selection: SelectedLineRange }) => void
   onDelete?: (comment: T) => void
   renderCommentActions?: (comment: T, controls: { edit: VoidFunction; remove: VoidFunction }) => JSX.Element
+  renderDraftActions?: (selection: SelectedLineRange, controls: { close: VoidFunction }) => JSX.Element
   editSubmitLabel?: string
   mention?: LineCommentEditorV2Mention
 }
@@ -46,6 +47,7 @@ type DraftProps = {
   cancelLabel?: string
   submitLabel?: string
   mention?: LineCommentEditorV2Mention
+  selectionActions?: JSX.Element
 }
 
 function lineCommentElementV2(view: Accessor<CommentProps>) {
@@ -74,6 +76,7 @@ function lineCommentElementV2(view: Accessor<CommentProps>) {
           cancelLabel={view().editor!.cancelLabel}
           submitLabel={view().editor!.submitLabel}
           mention={view().editor!.mention}
+          selectionActions={view().editor!.selectionActions}
         />
       </div>
     </Show>
@@ -92,6 +95,7 @@ function lineCommentDraftElementV2(view: Accessor<DraftProps>) {
         cancelLabel={view().cancelLabel}
         submitLabel={view().submitLabel}
         mention={view().mention}
+        selectionActions={view().selectionActions}
       />
     </div>
   )
@@ -161,25 +165,28 @@ export function createLineCommentControllerV2<T extends LineCommentShape>(props:
         },
       }
     },
-    renderDraft: (range) => ({
-      get value() {
-        return note.draft()
-      },
-      selection: formatSelectedLineLabel(range, i18n.t),
-      onInput: note.setDraft,
-      onCancel: () => {
+    renderDraft: (range) => {
+      const close = () => {
         note.cancelDraft()
         note.select(null)
-      },
-      onSubmit: (comment) => {
-        props.onSubmit({ comment, selection: cloneSelectedLineRange(range) })
-        note.cancelDraft()
-        note.select(null)
-      },
-      cancelLabel: i18n.t("ui.lineComment.cancel"),
-      submitLabel: i18n.t("ui.lineComment.submit"),
-      mention: props.mention,
-    }),
+      }
+      return {
+        get value() {
+          return note.draft()
+        },
+        selection: formatSelectedLineLabel(range, i18n.t),
+        onInput: note.setDraft,
+        onCancel: close,
+        onSubmit: (comment: string) => {
+          props.onSubmit({ comment, selection: cloneSelectedLineRange(range) })
+          close()
+        },
+        cancelLabel: i18n.t("ui.lineComment.cancel"),
+        submitLabel: i18n.t("ui.lineComment.submit"),
+        mention: props.mention,
+        selectionActions: props.renderDraftActions?.(cloneSelectedLineRange(range), { close }),
+      }
+    },
   })
 
   const renderGutterUtility = createLineCommentGutterRenderer({

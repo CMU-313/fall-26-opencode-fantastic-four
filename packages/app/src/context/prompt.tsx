@@ -8,6 +8,7 @@ import { useServerSDK } from "./server-sdk"
 import { useSettings } from "./settings"
 import { useSDK } from "./sdk"
 import { useTabs, type Tab } from "./tabs"
+import type { ExplanationLevel } from "@/learning/explanation-level"
 import {
   createPromptReady,
   createPromptSession,
@@ -153,6 +154,16 @@ export const { use: usePrompt, provider: PromptProvider } = createSimpleContext(
       model: {
         current: withSuspense(() => session().model.current()),
         set: (model: PromptModel | undefined) => session().model.set(model),
+      },
+      explanationLevel: {
+        current: withSuspense(() => session().explanationLevel.current()),
+        set: (level: ExplanationLevel) => session().explanationLevel.set(level),
+        reset: () => session().explanationLevel.reset(),
+      },
+      explanationRequest: {
+        current: withSuspense(() => session().explanationRequest.current()),
+        start: () => session().explanationRequest.start(),
+        reset: () => session().explanationRequest.reset(),
       },
       context: {
         items: withSuspense(() => session().context.items()),

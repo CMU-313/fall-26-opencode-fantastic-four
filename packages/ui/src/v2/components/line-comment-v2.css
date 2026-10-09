@@ -184,6 +184,12 @@
   min-width: 0;
 }
 
+[data-component="line-comment-v2"][data-variant="editor"] [data-slot="line-comment-v2-selection-actions"] {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 [data-component="line-comment-v2"][data-variant="editor"] [data-slot="line-comment-v2-footer-meta"] {
   flex: 1 1 auto;
   min-width: 0;

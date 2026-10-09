@@ -47,6 +47,7 @@ import { TextReveal } from "@opencode-ai/ui/text-reveal"
 import { TextShimmer } from "@opencode-ai/ui/text-shimmer"
 import type {
   AssistantMessage,
+  FilePart,
   Message as MessageType,
   Part as PartType,
   ToolPart,
@@ -77,6 +78,7 @@ import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
+import { EXPLANATION_LEVELS, type ExplanationLevel } from "@/learning/explanation-level"
 
 const emptyMessages: MessageType[] = []
 const emptyParts: PartType[] = []
@@ -255,6 +257,7 @@ export function MessageTimeline(props: {
   setRevealMessage?: (fn: (id: string) => void) => void
   setScrollToEnd?: (fn: () => void) => void
   setHistoryAnchor?: (handlers: { capture: () => void; restore: (done: boolean) => void }) => void
+  onRegenerateExplanation?: (input: { level: ExplanationLevel; files: FilePart[] }) => void
 }) {
   let touchGesture: number | undefined
 
@@ -1020,6 +1023,52 @@ export function MessageTimeline(props: {
     }
   }
 
+  const explanationRequest = (userMessageID: string) => {
+    const text = getMsgParts(userMessageID)
+      .flatMap((part) => (part.type === "text" && !part.synthetic ? [part.text] : []))
+      .join("\n")
+    return EXPLANATION_LEVELS.find(
+      (level) =>
+        text.trim() ===
+        language.t("prompt.explainSelection.requestAtLevel", {
+          level: language.t(`prompt.explanationLevel.${level}`),
+        }),
+    )
+  }
+
+  const explanationResponseActions = (userMessageID: string) => {
+    if (!props.onRegenerateExplanation) return
+    if (!explanationRequest(userMessageID)) return
+    const files = getMsgParts(userMessageID).filter(
+      (part): part is FilePart => part.type === "file" && /[?&]start=\d+&end=\d+/.test(part.url),
+    )
+    if (files.length === 0) return
+    return (
+      <MenuV2 gutter={4} placement="bottom-start">
+        <MenuV2.Trigger
+          as={ButtonV2}
+          icon="reset"
+          size="normal"
+          variant="ghost-muted"
+          aria-label={language.t("prompt.explainSelection.regenerate")}
+        >
+          {language.t("prompt.explainSelection.regenerate")}
+        </MenuV2.Trigger>
+        <MenuV2.Portal>
+          <MenuV2.Content>
+            <For each={EXPLANATION_LEVELS}>
+              {(level) => (
+                <MenuV2.Item onSelect={() => props.onRegenerateExplanation?.({ level, files })}>
+                  {language.t(`prompt.explanationLevel.${level}`)}
+                </MenuV2.Item>
+              )}
+            </For>
+          </MenuV2.Content>
+        </MenuV2.Portal>
+      </MenuV2>
+    )
+  }
+
   const renderAssistantPartGroup = (row: Accessor<TimelineRowMap["AssistantPart"]>, onSizeChange?: () => void) => {
     if (row().group.type === "context") {
       const parts = createMemo(() => {
@@ -1074,6 +1123,7 @@ export function MessageTimeline(props: {
                 showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
                 turnDurationMs={turnDurationMs(row().userMessageID)}
                 useV2Actions={settings.general.newLayoutDesigns()}
+                responseActions={explanationResponseActions(row().userMessageID)}
                 defaultOpen={defaultOpen()}
                 toolOpen={toolOpen[part().id] ?? defaultOpen()}
                 onToolOpenChange={(open) => setToolOpen(part().id, open)}

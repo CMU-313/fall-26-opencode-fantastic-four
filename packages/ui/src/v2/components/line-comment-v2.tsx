@@ -72,6 +72,7 @@ export interface LineCommentEditorV2Props extends Omit<ComponentProps<"div">, "c
   rows?: number
   cancelLabel?: string
   submitLabel?: string
+  selectionActions?: JSX.Element
   autofocus?: boolean
   mention?: LineCommentEditorV2Mention
 }
@@ -102,6 +103,7 @@ export function LineCommentEditorV2(props: LineCommentEditorV2Props) {
     "rows",
     "cancelLabel",
     "submitLabel",
+    "selectionActions",
     "autofocus",
     "mention",
     "class",
@@ -289,6 +291,9 @@ export function LineCommentEditorV2(props: LineCommentEditorV2Props) {
             </div>
           </Show>
         </div>
+        <Show when={local.selectionActions}>
+          {(actions) => <div data-slot="line-comment-v2-selection-actions">{actions()}</div>}
+        </Show>
         <div data-slot="line-comment-v2-footer">
           <div data-slot="line-comment-v2-footer-meta">{local.selection}</div>
           <div data-slot="line-comment-v2-footer-actions">

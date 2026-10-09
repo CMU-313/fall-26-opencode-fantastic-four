@@ -18,11 +18,13 @@ import { showToast } from "@/utils/toast"
 import { selectionFromLines, useFile, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { useComments } from "@/context/comments"
 import { useLanguage } from "@/context/language"
+import { useCommand } from "@/context/command"
 import { usePrompt } from "@/context/prompt"
 import { useSettings } from "@/context/settings"
 import { getSessionHandoff } from "@/pages/session/handoff"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { createSessionTabs } from "@/pages/session/helpers"
+import { SelectionActionsV2 } from "@/pages/session/selection-actions-v2"
 
 type SessionFileViewProps = {
   tab: string
@@ -513,6 +515,7 @@ function SessionFileViewV2(props: { tab: string }) {
   const comments = useComments()
   const language = useLanguage()
   const prompt = usePrompt()
+  const command = useCommand()
   const fileComponent = useFileComponent()
   const { sessionKey, tabs, view } = useSessionLayout()
   const activeFileTab = createSessionTabs({
@@ -669,6 +672,18 @@ function SessionFileViewV2(props: { tab: string }) {
         deleteLabel={language.t("common.delete")}
         onEdit={controls.edit}
         onDelete={controls.remove}
+      />
+    ),
+    renderDraftActions: (_, controls) => (
+      <SelectionActionsV2
+        onExplain={() => {
+          command.trigger("context.explainSelection")
+          controls.close()
+        }}
+        onAdd={() => {
+          command.trigger("context.addSelection")
+          controls.close()
+        }}
       />
     ),
   })
