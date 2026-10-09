@@ -203,6 +203,7 @@ export interface MessagePartProps {
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   useV2Actions?: boolean
+  responseActions?: JSX.Element
 }
 
 function MessageActionButton(
@@ -1448,6 +1449,7 @@ export function Part(props: MessagePartProps) {
         showAssistantCopyPartID={props.showAssistantCopyPartID}
         turnDurationMs={props.turnDurationMs}
         useV2Actions={props.useV2Actions}
+        responseActions={props.responseActions}
       />
     </Show>
   )
@@ -1744,6 +1746,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
               onClick={handleCopy}
               aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
             />
+            {props.responseActions}
             <Show when={meta()}>
               <span data-slot="text-part-meta" class="text-12-regular text-text-weak cursor-default">
                 {meta()}

@@ -60,6 +60,7 @@ export type FileContextItem = {
   commentID?: string
   commentOrigin?: "review" | "file"
   preview?: string
+  selectionSnapshot?: string
 }
 
 export type ContextItem = FileContextItem
