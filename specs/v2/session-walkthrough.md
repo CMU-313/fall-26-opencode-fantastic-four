@@ -69,6 +69,8 @@ bunx playwright test e2e/regression/session-walkthrough.spec.ts --workers=1
 
 ## Print a walkthrough in the terminal
 
+In the TUI, use `/walkthrough` or select **Learning walkthrough** in the session command palette. The dialog uses the same V2 endpoint and displays each file's changes, reason, and programming concepts. Use the arrow keys or Page Up/Page Down to scroll, Escape to close, and `r` to retry a failed request. Closing the dialog or switching sessions cancels the client request. Legacy sessions show an explanation that V2 sessions and a server with walkthrough support are required; this command does not migrate them. The command does not submit a conversational prompt.
+
 From the repository root, run:
 
 ```sh

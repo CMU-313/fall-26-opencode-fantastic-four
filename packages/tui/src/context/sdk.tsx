@@ -3,6 +3,7 @@ import type { GlobalEvent } from "@opencode-ai/sdk/v2"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { createSimpleContext } from "./helper"
 import { batch, onCleanup, onMount } from "solid-js"
+import { requestWalkthrough } from "../util/walkthrough"
 
 export type EventSource = {
   subscribe: (handler: (event: GlobalEvent) => void) => Promise<() => void>
@@ -143,6 +144,14 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
         return sdk
       },
       directory: props.directory,
+      walkthrough: (sessionID: string, signal: AbortSignal) =>
+        requestWalkthrough({
+          url: props.url,
+          sessionID,
+          fetch: props.fetch ?? fetch,
+          headers: props.headers,
+          signal,
+        }),
       event: emitter,
       fetch: props.fetch ?? fetch,
       url: props.url,

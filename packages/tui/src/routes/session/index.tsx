@@ -48,6 +48,7 @@ import { useDialog } from "../../ui/dialog"
 import { DialogAlert } from "../../ui/dialog-alert"
 import { TodoItem } from "../../component/todo-item"
 import { DialogMessage } from "./dialog-message"
+import { DialogWalkthrough } from "./dialog-walkthrough"
 import type { PromptInfo } from "../../component/prompt/history"
 import { DialogConfirm } from "../../ui/dialog-confirm"
 import { DialogTimeline } from "./dialog-timeline"
@@ -464,6 +465,15 @@ export function Session() {
   }
 
   const sessionCommandList = createMemo(() => [
+    {
+      title: "Learning walkthrough",
+      value: "session.walkthrough",
+      category: "Session",
+      slash: { name: "walkthrough" },
+      run: () => {
+        dialog.replace(() => <DialogWalkthrough sessionID={route.sessionID} />)
+      },
+    },
     {
       title: session()?.share?.url ? "Copy share link" : "Share session",
       value: "session.share",
