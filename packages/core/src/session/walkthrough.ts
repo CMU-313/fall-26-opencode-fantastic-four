@@ -4,19 +4,15 @@ import { LLM, type Model } from "@opencode-ai/llm"
 import { Effect, Schema } from "effect"
 import type { File } from "../file"
 import type { SessionMessage } from "./message"
+import { Entry } from "@opencode-ai/schema/session-walkthrough"
 
-const Text = Schema.String.check(Schema.isPattern(/\S/))
+export { Entry } from "@opencode-ai/schema/session-walkthrough"
 
 const Explanation = Schema.Struct({
-  whatChanged: Text,
-  whyChanged: Text,
-  concepts: Schema.Array(Text),
+  whatChanged: Entry.fields.whatChanged,
+  whyChanged: Entry.fields.whyChanged,
+  concepts: Entry.fields.concepts,
 })
-
-export class Entry extends Schema.Class<Entry>("SessionWalkthrough.Entry")({
-  file: Text,
-  ...Explanation.fields,
-}) {}
 
 export const instructions = `Explain a code change to a student reviewing an implementation.
 Return a structured explanation with whatChanged, whyChanged, and concepts.

@@ -39,4 +39,65 @@ Callers that already have `File.Diff[]` can call `SessionWalkthrough.generate({ 
 - Only user text and assistant text are included from session messages; reasoning and tool output are omitted. Context is capped at 8,000 characters and each patch at 16,000, with explicit truncation markers. Binary or unavailable patches are described with limited evidence.
 - Invalid model output and provider errors fail the effect rather than returning fabricated or partial results. Snapshot errors also propagate to the caller.
 
-This increment supplies core data generation. It does not add a UI, HTTP endpoint, persistence, or an automatic model call after every session. Callers choose when to generate a walkthrough and which model to use. The structural tests use deterministic provider responses; explanation quality still depends on the selected model.
+The core generator supplies data on demand and does not persist walkthroughs or automatically call a model after every session. Direct callers choose when to generate a walkthrough and which model to use. The structural tests use deterministic provider responses; explanation quality still depends on the selected model.
+
+## Requesting a walkthrough
+
+In an existing session connected to a V2 server, select **Learning walkthrough** from the session commands or use `/walkthrough`. The app opens a dialog and sends `POST /api/session/:sessionID/walkthrough` only after this action. The response is `{ data: Entry[] }`.
+
+The server loads the selected session's chronological message history, excludes messages at and after a staged revert boundary, and resolves the session's configured model in its Location. The request does not admit a prompt, wake or interrupt execution, change the model, or alter messages and snapshots. During active execution, the walkthrough covers completed snapshots available when the request reads history.
+
+The dialog displays loading, empty, and error states, supports explicit retries, and cancels its request when closed or when the selected session changes. The composer draft remains intact. UI strings use English i18n keys with the existing fallback for other locales. Legacy V1 sessions do not enable this action because the generator requires V2 session snapshots.
+
+The app currently vendors an older client. Its server adapter supplies a typed, authenticated walkthrough request using the configured platform fetch and validates the response with the canonical Schema contract. The workspace client is regenerated with the new endpoint for other consumers.
+
+Focused validation:
+
+```sh
+# packages/core
+bun test test/session-walkthrough.test.ts test/session-walkthrough-snapshot.test.ts --timeout 30000
+
+# packages/server
+bun test --preload ../core/test/preload.ts test/session-walkthrough.test.ts --timeout 30000
+
+# packages/app
+bun test --conditions=solid --preload ./happydom.ts src/utils/server.test.ts src/utils/server-compat.test.ts
+bunx playwright test e2e/regression/session-walkthrough.spec.ts --workers=1
+```
+
+## Print a walkthrough in the terminal
+
+From the repository root, run:
+
+```sh
+bun run --cwd packages/core walkthrough:demo
+```
+
+This calls `SessionWalkthrough.generate` with the example in `packages/core/script/walkthrough-demo.json` and prints formatted JSON containing `file`, `whatChanged`, `whyChanged`, and `concepts`. The input and a mode label go to stderr; the JSON result goes to stdout.
+
+**The default is sample mode:** it feeds a fixed provider response through the real generator and structured-output decoder. It needs no credentials or network connection. This demonstrates the output shape; it does not measure AI explanation quality.
+
+To see an empty result or save the JSON:
+
+```sh
+bun run --cwd packages/core walkthrough:demo --empty
+bun run --cwd packages/core walkthrough:demo > /tmp/walkthrough.json
+```
+
+### Real AI-generated explanations
+
+Use `--live` and the exact name of a model available to your account. OpenAI-compatible models must support Chat Completions tool calls. The script reads a provider API key from your terminal environment, not the OpenCode server password or saved application credentials.
+
+```sh
+# With OPENAI_API_KEY already set:
+bun run --cwd packages/core walkthrough:demo --live --provider openai --model YOUR_MODEL_NAME
+
+# With ANTHROPIC_API_KEY already set:
+bun run --cwd packages/core walkthrough:demo --live --provider anthropic --model YOUR_MODEL_NAME
+```
+
+Live mode makes a real provider request, prints the validated result, and fails rather than substituting the sample response if generation fails. Requests time out after 90 seconds. Use `--base-url` for a compatible local or custom API; include its API path, for example `http://localhost:1234/v1/`. Local APIs may omit the API key.
+
+To try another change, copy or edit `packages/core/script/walkthrough-demo.json`, then pass `--input /path/to/input.json` with `--live`. The JSON must have `context` and a `diffs` array using the existing `File.Diff` shape. Sample mode rejects custom input because its fixed explanation only describes the built-in example. `--empty` replaces the diffs with `[]` and never calls the model.
+
+When reviewing real output, compare it with the printed input: does it describe the actual code change, connect the reason to the user request, and name concepts used by the changed code? The demo exercises the generator directly; no server, web UI, or stored session is required.

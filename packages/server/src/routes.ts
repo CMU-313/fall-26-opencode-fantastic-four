@@ -15,6 +15,7 @@ import { HttpRouter, HttpServer } from "effect/unstable/http"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { Layer, Option } from "effect"
 import { Api } from "./api"
+import { cors } from "./cors"
 import { ServerAuth } from "./auth"
 import { handlers } from "./handlers"
 import { authorizationLayer } from "./middleware/authorization"
@@ -52,6 +53,7 @@ function makeRoutes<AuthError, AuthServices>(auth: Layer.Layer<ServerAuth.Config
   const serviceLayer = AppNodeBuilder.build(applicationServices, [[SessionExecution.node, SessionExecutionLocal.node]])
 
   return HttpApiBuilder.layer(Api, { openapiPath: "/openapi.json" }).pipe(
+    Layer.provide(cors()),
     Layer.provide(handlers),
     Layer.provide(sessionLocationLayer),
     Layer.provide(locationLayer),

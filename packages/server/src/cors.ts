@@ -1,4 +1,5 @@
-import { Context } from "effect"
+import { Context, Effect } from "effect"
+import { HttpMiddleware, HttpRouter, HttpServerResponse } from "effect/unstable/http"
 
 const opencodeOrigin = /^https:\/\/([a-z0-9-]+\.)*opencode\.ai$/
 
@@ -7,6 +8,24 @@ export type CorsOptions = { readonly cors?: ReadonlyArray<string> }
 export const CorsConfig = Context.Reference<CorsOptions | undefined>("@opencode/ServerCorsConfig", {
   defaultValue: () => undefined,
 })
+
+export const cors = (options?: CorsOptions) =>
+  HttpRouter.middleware(
+    (effect) =>
+      HttpMiddleware.cors({
+        allowedOrigins: (origin) => isAllowedCorsOrigin(origin, options),
+        maxAge: 86_400,
+      })(effect).pipe(
+        Effect.map((response) => {
+          if (!response.headers["access-control-allow-origin"]) return response
+          // Effect's preflight middleware overwrites Vary: Origin when echoing requested headers.
+          const vary = response.headers.vary
+          if (vary?.split(",").some((value) => ["origin", "*"].includes(value.trim().toLowerCase()))) return response
+          return HttpServerResponse.setHeader(response, "vary", vary ? `${vary}, Origin` : "Origin")
+        }),
+      ),
+    { global: true },
+  )
 
 export function isAllowedCorsOrigin(input: string | undefined, opts?: CorsOptions) {
   if (!input) return true

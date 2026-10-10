@@ -8,6 +8,7 @@ import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
 import { usePrompt } from "@/context/prompt"
 import { useSDK } from "@/context/sdk"
+import { useServerProtocol } from "@/context/server-sdk"
 import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
@@ -44,6 +45,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const permission = usePermission()
   const prompt = usePrompt()
   const sdk = useSDK()
+  const protocol = useServerProtocol()
   const settings = useSettings()
   const sync = useSync()
   const terminal = useTerminal()
@@ -412,6 +414,23 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     })
   }
 
+  const walkthrough = () => {
+    const sessionID = params.id
+    if (!sessionID) return
+    const session = sdk().api.session
+    const owner = sessionOwnership.capture()
+    void openDialog(
+      () => import("@/components/dialog-walkthrough"),
+      (module) =>
+        dialog.show(() => (
+          <module.DialogWalkthrough
+            current={owner.current}
+            request={(signal) => session.walkthrough({ sessionID }, { signal })}
+          />
+        )),
+    )
+  }
+
   const fork = () => {
     void openDialog(
       () => import("@/components/dialog-fork"),
@@ -488,6 +507,14 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       slash: "fork",
       disabled: !params.id || visibleUserMessages().length === 0,
       onSelect: fork,
+    }),
+    sessionCommand({
+      id: "session.walkthrough",
+      title: language.t("command.session.walkthrough"),
+      description: language.t("command.session.walkthrough.description"),
+      slash: "walkthrough",
+      disabled: !params.id || protocol() !== "v2",
+      onSelect: walkthrough,
     }),
     sessionCommand({
       id: "session.export",
