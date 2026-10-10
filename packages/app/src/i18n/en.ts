@@ -1,6 +1,16 @@
 import { DESKTOP_NATIVE_ENGLISH } from "./desktop-native"
 
 export const dict = {
+  "command.session.walkthrough": "Learning walkthrough",
+  "command.session.walkthrough.description": "Explain the changes made in this session",
+  "walkthrough.loading": "Preparing your learning walkthrough…",
+  "walkthrough.empty": "No completed changes to explain.",
+  "walkthrough.error": "The learning walkthrough could not be generated. Please try again.",
+  "walkthrough.retry": "Try again",
+  "walkthrough.whatChanged": "What changed",
+  "walkthrough.whyChanged": "Why it changed",
+  "walkthrough.concepts": "Programming concepts",
+
   ...DESKTOP_NATIVE_ENGLISH,
   "command.category.suggested": "Suggested",
   "command.category.view": "View",

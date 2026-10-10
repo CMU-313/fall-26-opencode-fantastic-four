@@ -100,6 +100,19 @@ const domains = [
   },
 ] as const
 
+// These app keys use the runtime English fallback until walkthrough translations are available.
+const walkthroughFallback = new Set([
+  "command.session.walkthrough",
+  "command.session.walkthrough.description",
+  "walkthrough.loading",
+  "walkthrough.empty",
+  "walkthrough.error",
+  "walkthrough.retry",
+  "walkthrough.whatChanged",
+  "walkthrough.whyChanged",
+  "walkthrough.concepts",
+])
+
 describe("i18n parity", () => {
   test("non-English locales have every required English key and plural variant", async () => {
     for (const domain of domains) {
@@ -107,7 +120,12 @@ describe("i18n parity", () => {
       const fallback = new Set<string>(domain.fallback)
       for (const locale of domain.locales) {
         const target = await dictionary(domain.target(locale))
-        const missing = Object.keys(source).filter((key) => !Object.hasOwn(target, key) && !fallback.has(key))
+        const missing = Object.keys(source).filter(
+          (key) =>
+            !Object.hasOwn(target, key) &&
+            !fallback.has(key) &&
+            !(domain.name === "app" && walkthroughFallback.has(key)),
+        )
         const extra = Object.keys(target)
           .filter((key) => !Object.hasOwn(source, key))
           .sort()

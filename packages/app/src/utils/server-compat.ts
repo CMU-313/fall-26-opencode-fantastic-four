@@ -4,7 +4,6 @@ import type { AgentPartInput, FilePartInput, OpencodeClient, Session, TextPartIn
 import type {
   Project,
   ProjectCurrent,
-  SessionApi,
   SessionCommandInput,
   SessionCommandOutput,
   SessionCompactInput,
@@ -15,6 +14,8 @@ import type {
   SessionShellInput,
   SessionShellOutput,
 } from "@opencode-ai/client/promise"
+
+type SessionApi = ServerApi["session"]
 
 type LegacyClient = OpencodeClient
 type LegacyFor = (directory?: string) => LegacyClient

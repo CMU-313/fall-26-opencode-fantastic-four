@@ -1,0 +1,12 @@
+{
+  "context": "User: Normalize names before greeting people: trim surrounding whitespace and use Guest for a blank name. Assistant: I trim the input once and use a fallback so the greeting is never empty.",
+  "diffs": [
+    {
+      "path": "src/greet.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "patch": "diff --git a/src/greet.ts b/src/greet.ts\n--- a/src/greet.ts\n+++ b/src/greet.ts\n@@ -1,3 +1,4 @@\n export function greet(name: string) {\n-  return `Hello ${name}`\n+  const displayName = name.trim() || \"Guest\"\n+  return `Hello ${displayName}`\n }\n"
+    }
+  ]
+}
