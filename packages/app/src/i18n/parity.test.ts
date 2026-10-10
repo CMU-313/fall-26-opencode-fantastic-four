@@ -121,9 +121,11 @@ describe("i18n parity", () => {
       for (const locale of domain.locales) {
         const target = await dictionary(domain.target(locale))
         const missing = Object.keys(source).filter(
-          (key) => !Object.hasOwn(target, key) && !(domain.name === "app" && walkthroughFallback.has(key)),
+          (key) =>
+            !Object.hasOwn(target, key) &&
+            !fallback.has(key) &&
+            !(domain.name === "app" && walkthroughFallback.has(key)),
         )
-        const missing = Object.keys(source).filter((key) => !Object.hasOwn(target, key) && !fallback.has(key))
         const extra = Object.keys(target)
           .filter((key) => !Object.hasOwn(source, key))
           .sort()
