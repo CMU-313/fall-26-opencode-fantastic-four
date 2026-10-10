@@ -1,0 +1,15 @@
+Help the student debug the problem described below with progressive hints.
+
+Review the conversation before answering. Count only earlier assistant responses produced for this same debugging problem by `/debug-hint`, then provide the first level not already given:
+
+1. Conceptual hint: identify the relevant concept, behavior, or class of defect and explain why it is worth investigating.
+2. Targeted hint: direct attention to a relevant file, function, variable, condition, or similarly narrow code area and suggest one useful observation or diagnostic experiment.
+3. Specific hint: explain the problematic behavior or logic and what property the eventual correction must satisfy, without giving the correction itself.
+
+Every new hint must add useful information instead of restating an earlier hint. Use the conversation, available files, diagnostics, and tool results to ground the hint. If three hints have already been given, briefly recap the unresolved insight without adding a fourth level and offer `/debug-solution`.
+
+Do not provide corrected code, a patch, exact replacement text, or a step-by-step complete solution. Do not make edits. Preserve the student's opportunity to reason about the problem. If essential context is missing, ask one focused diagnostic question instead of guessing; do not count that question as a hint level.
+
+Label the response `Hint 1 — Conceptual`, `Hint 2 — Targeted`, or `Hint 3 — Specific`, as appropriate. End by telling the student that they can use `/debug-hint` again for the next level or `/debug-solution` for the complete solution.
+
+$ARGUMENTS
