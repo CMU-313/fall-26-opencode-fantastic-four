@@ -44,9 +44,8 @@ Tests are located in `packages/opencode/test/cli/agent.test.ts` and cover the fo
 
 **Justification:** The above tests cover criteria from the associated issues and user story. This includes correct/updated permission shape, correct path rule reading and generation, correct ordering of rules, integration testing, and end-to-end testing.
 
-# Fantastic Four OpenCode User Guide
-
-## Progressive debugging hints
+# Progressive debugging hints
+## Jake Pajerski (andrewid jakepaje/ github JakePJakeP)
 
 The debugging-hint commands let a student ask for help without immediately receiving a complete solution. They are opt-in: normal OpenCode prompts continue to behave normally.
 
@@ -82,8 +81,8 @@ Use a small reproducible bug and check the following behavior in one conversatio
 Model output can vary, so manual user testing checks the response behavior. The automated contract tests are in `packages/opencode/test/command/debugging.test.ts`. They verify the three-level progression instructions, conversation-aware level selection, non-repetition rule, solution boundary, missing-context behavior, explicit solution escape hatch, command names, and argument forwarding. Together, these tests cover the deterministic command contract while the manual steps cover the model's observable response to that contract.
 
 
-## Feature: Explain Selected Code (Adjustable Depth & Multi-Selection)
-**Contributor:** Emma Ma / @horsepaperfish
+# Feature: Explain Selected Code (Adjustable Depth & Multi-Selection)
+## Emma Ma (andrewid zm/ github horsepaperfish)
 
 Because students have varying levels of familiarity with a codebase, not everyone requires the same depth of detail when asking AI to explain code. This feature introduces an "Explain Selected Code" workflow in OpenCode's Web UI with adjustable Beginner, Intermediate, and Advanced explanation levels, non-contiguous line selection support, and session-isolated depth settings.
 
