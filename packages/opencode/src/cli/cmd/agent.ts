@@ -11,6 +11,7 @@ import type { Argv } from "yargs"
 import { Effect } from "effect"
 import { effectCmd } from "../effect-cmd"
 import { Permission } from "@opencode-ai/schema/permission"
+import { PermissionV2 } from "@opencode-ai/core/permission"
 
 type AgentMode = "all" | "primary" | "subagent"
 
