@@ -109,7 +109,6 @@ describe("prompt-input history properties (P4 zm)", () => {
       ),
       { numRuns: 200 },
     )
-    console.info("P4 zm R1 passed: metamorphic attachment recall (200 runs)")
   })
 
   // R2: Browsing history and making unsent edits shall not modify the stored
@@ -145,7 +144,6 @@ describe("prompt-input history properties (P4 zm)", () => {
       }),
       { numRuns: 200 },
     )
-    console.info("P4 zm R2 passed: invariant stored-entry preservation (200 runs)")
   })
 
   // R3: Leaving history past the most recent entry shall restore the text and
@@ -176,7 +174,6 @@ describe("prompt-input history properties (P4 zm)", () => {
       ),
       { numRuns: 200 },
     )
-    console.info("P4 zm R3 passed: round-trip draft restoration (200 runs)")
   })
 
   // R6: Navigation shall not wrap. Up at the oldest entry leaves it unchanged;
@@ -216,6 +213,5 @@ describe("prompt-input history properties (P4 zm)", () => {
       ),
       { numRuns: 200 },
     )
-    console.info("P4 zm R6 passed: model/oracle history boundaries (200 runs)")
   })
 })
