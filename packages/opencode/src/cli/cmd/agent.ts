@@ -70,7 +70,13 @@ export function buildPathPermissions(allowPaths: string[] | undefined, denyPaths
 // an array of trimmed patterns, or undefined if the input is empty/absent.
 export function parsePathInput(input: string | undefined): string[] | undefined {
   if (!input) return undefined
-  return input.split(",").map((p) => p.trim())
+
+  const paths = input
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0)
+
+  return paths.length > 0 ? paths : undefined
 }
 
 const AgentCreateCommand = effectCmd({
