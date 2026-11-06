@@ -32,6 +32,8 @@ const conversationTurn = fc.record({
   problem: fc.string({ minLength: 1, maxLength: 80 }),
 })
 
+console.info("Project 4 properties running: R1 invariant, R2 invariant, R3 model/oracle, R8 metamorphic")
+
 describe("progressive debugging properties", () => {
   // R1: Before /debug-solution, /debug-hint must not authorize a complete correction.
   // Kind: invariant. Arbitrary text includes prompt-like and adversarial user input,
