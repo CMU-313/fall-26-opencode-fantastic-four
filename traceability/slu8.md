@@ -32,7 +32,7 @@ Properties written or suggested by opencode or another AI tool: R3, R5
 
 
 
-## Mutant Predictions
+## Hand Written Mutant Predictions and Results
 | ID | Requirement Targeted | Change | Predicted Killer | Actual Result |
 |---|---|---|---|---|
 | H1 | R1 | Changed denyPaths.length > 0 to denyPaths.length > 1 | A path that has been specified in --deny-paths should be blocked for both read and edit permissions (R1) | Killed: R1 property test failed after 11 tests; Counterexample: [["src"],"read"]; Shrunk 3 time(s) |
@@ -40,3 +40,19 @@ Properties written or suggested by opencode or another AI tool: R3, R5
 | H3 | R5 | Effect is fine, but function gives back wrong rule (1st instead of last) | Given a rules, an action, and a path, `explainAccess` returns the effect and the associated rule, or `ask` when no rule matches (R5) | Survived: all tests passed, no difference detected between the first rule and the last matching rule |
 | H4 | R1 | Block only for reading, not editing when deny path is specified | A path that has been specified in --deny-paths should be blocked for both read and edit permissions (R1) | Killed: R1 property test failed after 1 test; Counterexample: [["src"],"edit"]; Shrunk 3 time(s) |
 | H5 | R5 | Change returned effect to always be “allow” | Given a rules, an action, and a path, `explainAccess` returns the effect and the associated rule, or `ask` when no rule matches (R5) | Killed: R5 property test failed after 1 test; Counterexample: [[],"read","src/a.ts"]; Shrunk 2 time(s) |
+
+
+
+## Stryker Comparison
+
+Mutation Score: 62.50 (20 killed, 12 survived, no timeouts or errors)
+
+Questions:
+1. Which of your hand-written mutants did Stryker never generate? Why not?
+    Stryker did not generate the H2 mutant, where the allow and deny path processes were swapped. Stryker supports block removal, but not necessarily swapping two whole blocks and keeping them intact. It only created smaller, more localized mutations that often only changed one var or one char.
+
+2. Which Stryker survivors would you never have thought of? Are any of them bugs a real developer might plausibly write?
+    Stryker created a lot more small mutations (empty strings, reomoving statements) that I didn't consider, mainly because I was focused on the big picture. These are definitely bugs that a developer could accidentally write if they are reafactoring or some code gets accidentally removed. I would not have thought of changing the allow-path to if false, which completely prevents allow rules from being processed.
+
+3. What does each approach find that the other doesn't?
+    Hand-writing mutants were a bit limited in scope because it was based on my understanding of the key functionalities of this feature, which made me miss a few of the more obscure mutants. Hand-written mutants can be useful for more requirement-specific mistakes that are larger, whereas Stryker can be used for smaller, systematic code changes. Using both, however, absolutely provides a more thorough testing as opposed to using just one or the other.

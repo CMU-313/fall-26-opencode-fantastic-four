@@ -3,6 +3,7 @@ import fc from "fast-check"
 import matter from "gray-matter"
 import { PermissionV2 } from "@opencode-ai/core/permission"
 import { buildPermissions, buildPathPermissions, explainAccess } from "../../src/cli/cmd/agent"
+fc.configureGlobal({ seed: 42 })
 
 // Generators: a tiny shared alphabet of segments so generated patterns and
 // probe paths actually overlap. Random strings would almost never match, and
