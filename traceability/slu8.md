@@ -28,3 +28,15 @@ Properties written or suggested by opencode or another AI tool: R3, R5
 | R5 | Agent restrictions can be seen and reviewed using a slash command | Given a rule, an action, and a path, `explainAccess` returns the effect and the associated rule, or `ask` when no rule matches | Not feasible as CLI command. `agent list` reads the older V1 agent system and can't see agents created as `.md` files |
 | R6 | After creating an agent with path restrictions, the user can check what files were limited or allowed | Given an agent's rules and a list of paths, an instructor can get the effect/rule for each path, to check before distributing | Not feasible for same R5 V1 reason. Depends on the file system. R6 can supply path permissions using `explainAccess`, as covered in R5 |
 | R7 | A history of the rulesets can be printed using a command (to view changes in file/folder access) | Deferred, not implemented in this project |  Not feasible for timeframe. Requires history of session, which lies outside of the rule-building and evlauation scope |
+
+
+
+
+## Mutant Predictions
+| ID | Requirement Targeted | Change | Predicted Killer | Actual Result |
+|---|---|---|---|---|
+| H1 | R1 | Changed denyPaths.length > 0 to denyPaths.length > 1 | A path that has been specified in --deny-paths should be blocked for both read and edit permissions (R1) | Killed: R1 property test failed after 11 tests; Counterexample: [["src"],"read"]; Shrunk 3 time(s) |
+| H2 | R2 | Swapped the two blocks that process deny paths first, then allow paths | R1 or R2 (dealing with rules being properly implemented) | Survived: all tests passed, order and final decision changes were not detected |
+| H3 | R5 | Effect is fine, but function gives back wrong rule (1st instead of last) | Given a rules, an action, and a path, `explainAccess` returns the effect and the associated rule, or `ask` when no rule matches (R5) | Survived: all tests passed, no difference detected between the first rule and the last matching rule |
+| H4 | R1 | Block only for reading, not editing when deny path is specified | A path that has been specified in --deny-paths should be blocked for both read and edit permissions (R1) | Killed: R1 property test failed after 1 test; Counterexample: [["src"],"edit"]; Shrunk 3 time(s) |
+| H5 | R5 | Change returned effect to always be “allow” | Given a rules, an action, and a path, `explainAccess` returns the effect and the associated rule, or `ask` when no rule matches (R5) | Killed: R5 property test failed after 1 test; Counterexample: [[],"read","src/a.ts"]; Shrunk 2 time(s) |
