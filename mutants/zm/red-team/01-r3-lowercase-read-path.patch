@@ -1,0 +1,12 @@
+diff --git a/packages/opencode/src/cli/cmd/run/tool.ts b/packages/opencode/src/cli/cmd/run/tool.ts
+--- a/packages/opencode/src/cli/cmd/run/tool.ts
++++ b/packages/opencode/src/cli/cmd/run/tool.ts
+@@ -943,7 +943,7 @@
+ }
+ 
+ function permRead(p: ToolPermissionProps<typeof ReadTool>): ToolPermissionInfo {
+-  const file = p.input.filePath || p.patterns[0] || ""
++  const file = (p.input.filePath || p.patterns[0] || "").toLowerCase()
+   return {
+     icon: "→",
+     title: `Read ${toolPath(file, { home: true })}`,
