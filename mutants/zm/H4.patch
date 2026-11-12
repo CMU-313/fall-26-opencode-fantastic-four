@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/prompt-input/history.ts b/packages/app/src/components/prompt-input/history.ts
+index 79e8abc..c35fc3b 100644
+--- a/packages/app/src/components/prompt-input/history.ts
++++ b/packages/app/src/components/prompt-input/history.ts
+@@ -194,7 +194,7 @@ export function navigatePromptHistory(input: HistoryNavInput): HistoryNavResult
+       }
+     }
+ 
+-    if (input.historyIndex < input.entries.length - 1) {
++    if (input.historyIndex < input.entries.length - 2) {
+       const next = input.historyIndex + 1
+       const entry = normalizePromptHistoryEntry(input.entries[next])
+       return {

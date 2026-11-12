@@ -1,0 +1,12 @@
+diff --git a/packages/opencode/src/tool/write.ts b/packages/opencode/src/tool/write.ts
+--- a/packages/opencode/src/tool/write.ts
++++ b/packages/opencode/src/tool/write.ts
+@@ -59,7 +59,7 @@
+               filepath,
+               diff,
+               operation: "write",
+-              exists,
++              exists: exists && contentOld.length > 0,
+               lineCount: contentNew.split("\n").length - Number(contentNew.endsWith("\n")),
+             },
+           })

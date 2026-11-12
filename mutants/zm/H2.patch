@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/prompt-input/history.ts b/packages/app/src/components/prompt-input/history.ts
+index 79e8abc..0fdfc18 100644
+--- a/packages/app/src/components/prompt-input/history.ts
++++ b/packages/app/src/components/prompt-input/history.ts
+@@ -38,7 +38,7 @@ export function clonePromptParts(prompt: Prompt): Prompt {
+     if (part.type === "agent") return { ...part }
+     return {
+       ...part,
+-      selection: part.selection ? { ...part.selection } : undefined,
++      selection: part.selection,
+     }
+   })
+ }
