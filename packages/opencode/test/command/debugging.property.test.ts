@@ -2,13 +2,11 @@ import { describe, expect, test } from "bun:test"
 import fc from "fast-check"
 import PROMPT_DEBUG_HINT from "../../src/command/template/debug-hint.txt"
 import PROMPT_DEBUG_SOLUTION from "../../src/command/template/debug-solution.txt"
-import { hints } from "../../src/command"
+import { hints, replaceArguments } from "../../src/command"
 
 const argumentsMarker = "$ARGUMENTS"
 
-function expand(template: string, problem: string) {
-  return template.replaceAll(argumentsMarker, () => problem)
-}
+fc.configureGlobal({ seed: 3132026, numRuns: 100 })
 
 function policy(template: string) {
   return template.slice(0, template.lastIndexOf(argumentsMarker)).trim()
@@ -21,18 +19,31 @@ function disclosureLevels(template: string) {
   }))
 }
 
+function authorizesCorrection(template: string) {
+  return template
+    .split(/[.!?]\s+/)
+    .some(
+      (sentence) =>
+        !/\b(?:do not|don't|never|without)\b/i.test(sentence) &&
+        /\b(?:provide|include|show|write|supply)\b[^.]{0,80}\b(?:corrected code|patch|replacement)\b/i.test(sentence),
+    )
+}
+
 const problem = fc
   .array(fc.constantFrom(..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 $/`-_.,!?"), {
     minLength: 1,
     maxLength: 500,
   })
   .map((characters) => characters.join(""))
+const replacementSensitiveProblem = fc
+  .tuple(problem, fc.constantFrom("$$", "$&", "$`", "$'", "$1"), problem)
+  .map(([prefix, token, suffix]) => `${prefix}${token}${suffix}`)
 const conversationTurn = fc.record({
   kind: fc.constantFrom("hint", "clarification", "solution"),
   problem: fc.string({ minLength: 1, maxLength: 80 }),
 })
 
-console.info("Project 4 properties running: R1 invariant, R2 invariant, R3 model/oracle, R8 metamorphic")
+console.info("Project 5 properties running (seed 3132026): R1 invariant, R2 invariant, R3 model/oracle, R8 metamorphic")
 
 describe("progressive debugging properties", () => {
   // R1: Before /debug-solution, /debug-hint must not authorize a complete correction.
@@ -40,13 +51,14 @@ describe("progressive debugging properties", () => {
   // exercising the boundary between trusted command policy and user-supplied arguments.
   test("R1 invariant: generated requests cannot replace the hint-only policy", () => {
     fc.assert(
-      fc.property(problem, (request) => {
-        const rendered = expand(PROMPT_DEBUG_HINT, request)
+      fc.property(replacementSensitiveProblem, (request) => {
+        const rendered = replaceArguments(PROMPT_DEBUG_HINT, request)
         const trusted = policy(PROMPT_DEBUG_HINT)
 
         expect(rendered.startsWith(trusted)).toBeTrue()
         expect(rendered.slice(trusted.length)).toBe(`\n\n${request}\n`)
         expect(trusted).toContain("Do not provide corrected code")
+        expect(authorizesCorrection(trusted)).toBeFalse()
         expect(policy(PROMPT_DEBUG_SOLUTION)).toContain("provide a complete, actionable correction")
       }),
     )
@@ -57,15 +69,29 @@ describe("progressive debugging properties", () => {
   // is pure and the command exposes only its argument placeholder, never a write target.
   test("R2 invariant: rendering a hint leaves every generated repository snapshot unchanged", () => {
     fc.assert(
-      fc.property(fc.dictionary(fc.string({ minLength: 1, maxLength: 40 }), fc.uint8Array()), problem, (files, request) => {
+      fc.property(fc.dictionary(fc.string({ minLength: 1, maxLength: 40 }), fc.uint8Array()), replacementSensitiveProblem, (files, request) => {
         const before = structuredClone(files)
-        const rendered = expand(PROMPT_DEBUG_HINT, request)
+        const rendered = replaceArguments(PROMPT_DEBUG_HINT, request)
 
         expect(files).toEqual(before)
         expect(hints(PROMPT_DEBUG_HINT)).toEqual([argumentsMarker])
         expect(policy(PROMPT_DEBUG_HINT)).toContain("Do not make edits")
         expect(rendered.endsWith(`${request}\n`)).toBeTrue()
       }),
+    )
+    fc.assert(
+      fc.property(
+        fc.array(fc.integer({ min: 1, max: 99 }), { maxLength: 15 }),
+        fc.boolean(),
+        (positions, includeArguments) => {
+          const tokens = positions.map((position) => `$${position}`)
+          const template = [...tokens, ...(includeArguments ? [argumentsMarker] : []), "plain text"].join(" / ")
+          const expected = [...new Set(tokens)].sort()
+          if (includeArguments) expected.push(argumentsMarker)
+
+          expect(hints(template)).toEqual(expected)
+        },
+      ),
     )
   })
 
