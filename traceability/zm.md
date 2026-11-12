@@ -85,3 +85,26 @@ Equivalent mutants:
 - **57, 71, 122, 136:** The earlier guard makes each mutated nonmatching-type fallback unreachable. Changing an unreachable fallback string cannot affect the comparison or any observable result.
 
 H5 still survives: model selection is outside these helper properties, thus no component-test setup was added.
+
+## Agent failure Case
+
+**OpenCode transcript screenshots:** the prompt and response, followed by the relevant R1c selection property.
+
+![OpenCode prompt and beginning of response](../mutants/zm/opencode-prompt.png)
+
+![OpenCode R1c selection-identity property](../mutants/zm/opencode-selection-property.png)
+
+**Surviving mutant:** Stryker **104** replaces `a.endChar === b.endChar` with `true` in `history.ts`, incorrectly deduplicating selections that differ only in their ending column.
+
+**Why it survived:** R1c compares a selection with no selection, never two selections on the same file. R1a/R1b use different paths, and R1d uses different attachment counts; none isolates a changed selection coordinate.
+
+**Strengthened version:** The existing [R1 identity property](../packages/app/src/components/prompt-input/history.property.test.ts) keeps the path and other fields fixed, changes each selection coordinate individually, and requires two entries in both submission orders.
+
+**Evidence:** I transcribed all four OpenCode properties and ran them against isolated copies of the real helper, using **seed 42, 200 cases per property**. The strengthened check was run separately against the same copies.
+
+| Helper version | OpenCode R1a–R1d | Strengthened R1 identity property |
+|---|---|---|
+| Unmodified | 4 pass, 0 fail | 1 pass, 0 fail |
+| Mutant 104 | 4 pass, 0 fail: survived | 0 pass, 1 fail: killed |
+
+The strengthened counterexample uses `src/a.ts` with selections differing only in `endChar` (`0` versus `1`): expected two entries, received one.
