@@ -8,20 +8,20 @@
 - [`packages/app/src/components/prompt-input/history-store.ts`](../packages/app/src/components/prompt-input/history-store.ts): persistence.
 
 **Existing tests:** [`packages/app/src/components/prompt-input/history.test.ts`](../packages/app/src/components/prompt-input/history.test.ts).
-**Added Fast-check tests:** [`packages/app/src/components/prompt-input/history.property.test.ts`](../packages/app/src/components/prompt-input/history.property.test.ts)
+**Added Fast-check tests:** [History helper properties](../packages/app/src/components/prompt-input/history.property.test.ts).
 
 ## Requirements
 
 | ID | Interview evidence | Requirement | Acceptance Criteria | Changed in P4? | Property (kind) | Test | Mutants it kills |
 |---|---|---|---|---|---|---|---|
-| R1 | C-8, S-9, O-8: Identical prompt text with different attached files should produce two prompt history entries, each containing its own file. | Submitted prompts with identical text but different file attachments shall remain distinct history entries. Recalling either entry shall restore its corresponding attachment. | Submit "Explain this code" with a file attached (e.g. `test.py`), then submit the same text with another file (e.g. `test2.py`). From an empty editor, Up recalls the entry with `test2.py`; another Up recalls the entry with `test.py`. Each entry contains only its own attachment. | No | Metamorphic | Line 83 of fast-check test file | H1, H4 |
-| R2 | C-4, S-3, S-4, O-3, O-4: Previously submitted prompts must remain unchanged when edited without being sent. | Browsing prompt history and making unsent edits to a previously sent prompt shall not modify the stored entry's text or attachments. | Given a previously sent prompt "Explain this function" with a file attached, recall it, change its text, and remove the attachment without submitting. Leave that entry and recall it again. It contains the original text and the same file attached. | No | Invariant | Line 115 of fast-check test file | H2, H4 |
-| R3 | C-5-C-6, S-5, S-7, O-5-O-6: Returning from history should restore the unfinished draft and its attachment. | When the user exits history by navigating forward past the most recent entry, the editor shall restore the text and attachments present immediately before entering history. | Given an unfinished draft "Check this error" with a file (e.g. `draft.py`) attached, enter history and browse two previous entries. Navigate forward until leaving history. The editor contains exactly "Check this error" and that file (e.g. `draft.py`), with no attachments carried over from the browsed entries. | No | Round-trip | Line 151 of fast-check test file | H3, H4 |
+| R1 | C-8, S-9, O-8: Identical prompt text with different attached files should produce two prompt history entries, each containing its own file. | Submitted prompts with identical text but different file attachments shall remain distinct history entries. Recalling either entry shall restore its corresponding attachment. | Submit "Explain this code" with a file attached (e.g. `test.py`), then submit the same text with another file (e.g. `test2.py`). From an empty editor, Up recalls the entry with `test2.py`; another Up recalls the entry with `test.py`. Each entry contains only its own attachment. | No | Metamorphic | [Attachment recall and identity](../packages/app/src/components/prompt-input/history.property.test.ts) | H1, H4 |
+| R2 | C-4, S-3, S-4, O-3, O-4: Previously submitted prompts must remain unchanged when edited without being sent. | Browsing prompt history and making unsent edits to a previously sent prompt shall not modify the stored entry's text or attachments. | Given a previously sent prompt "Explain this function" with a file attached, recall it, change its text, and remove the attachment without submitting. Leave that entry and recall it again. It contains the original text and the same file attached. | No | Invariant | [Stored-entry preservation and cloning](../packages/app/src/components/prompt-input/history.property.test.ts) | H2, H4 |
+| R3 | C-5-C-6, S-5, S-7, O-5-O-6: Returning from history should restore the unfinished draft and its attachment. | When the user exits history by navigating forward past the most recent entry, the editor shall restore the text and attachments present immediately before entering history. | Given an unfinished draft "Check this error" with a file (e.g. `draft.py`) attached, enter history and browse two previous entries. Navigate forward until leaving history. The editor contains exactly "Check this error" and that file (e.g. `draft.py`), with no attachments carried over from the browsed entries. | No | Round-trip | [Draft round-trip](../packages/app/src/components/prompt-input/history.property.test.ts) | H3, H4 |
 | R4 | C-6, S-6: The cursor should return to its previous position. O-6: The cursor should return to the last character. | When restoring an unfinished draft after history navigation, the editor shall restore the cursor position recorded immediately before entering history. | Given draft text "Check this error" with the cursor immediately after "Check", enter and exit history. The cursor returns immediately after "Check". Repeat with the cursor at the end; it returns to the end. | No | Not selected for Step 2 | No property test | None, no property test was written |
 | R5 | C-7, S-8, O-7: Recalling a previously submitted prompt should retain the currently selected model rather than restore the original model. | Navigating prompt history shall not change the currently selected AI model. | Given a previously submitted prompt originally submitted using Model A, select Model B and recall that prompt. Model B remains selected. Browse additional entries and return to the draft; Model B remains selected throughout. | No | Not selected for Step 2 | No property test | None, no property test was written but H5 survived |
-| R6 | C-10, S-11, O-10: Navigation should stop at history boundaries rather than cycle around. | History navigation shall not wrap around. Up at the oldest entry shall leave it unchanged. Down from the newest entry shall restore the saved draft. Further Down presses shall leave that draft unchanged. | Given two previous entries and an initially empty draft, navigate to the oldest entry and press Up twice; it remains displayed. Navigate forward through the newest entry to the empty draft and press Down again; the editor remains empty. | No | Oracle | Line 182 of fast-check test file | H4 |
+| R6 | C-10, S-11, O-10: Navigation should stop at history boundaries rather than cycle around. | History navigation shall not wrap around. Up at the oldest entry shall leave it unchanged. Down from the newest entry shall restore the saved draft. Further Down presses shall leave that draft unchanged. | Given two previous entries and an initially empty draft, navigate to the oldest entry and press Up twice; it remains displayed. Navigate forward through the newest entry to the empty draft and press Down again; the editor remains empty. | No | Oracle | [Bounded navigation and missing snapshot](../packages/app/src/components/prompt-input/history.property.test.ts) | H4 |
 
-Properties written or suggested by opencode or another AI tool: R1, R2, R6 (written with Codex assistance).
+Properties written or suggested by opencode or another AI tool: R1, R2, R6 (written with Codex assistance). The strengthening changes in the existing history property file were also written with Codex assistance.
 
 ## Requirement changes
 
@@ -33,7 +33,7 @@ NIL
 
 ## Hand-written mutants
 
-Each patch is applied to commit `796bae507df8df951d07795ab70cf7e945f9e37f` on `zm/properties`. 
+Each patch is applied to commit `796bae507df8df951d07795ab70cf7e945f9e37f` on `zm/properties`. These are the initial results; the strengthening rerun is recorded below.
 
 | ID | Requirement targeted | Change | Predicted killer | Actual result |
 |---|---|---|---|---|
@@ -50,7 +50,7 @@ Each patch is applied to commit `796bae507df8df951d07795ab70cf7e945f9e37f` on `z
 
 **HTML report:** [mutants/zm/mutation.html](../mutants/zm/mutation.html).
 
-**Mutation score: 63.5%** — 127 of 200 mutants killed; 73 survived. Only the four property tests ran, with **seed 42** and **200 cases per property**.
+**Initial mutation score: 63.5%** — 127 of 200 mutants killed; 73 survived. Only the four property tests ran, with **seed 42** and **200 cases per property**.
 
 **Which handwritten mutants did Stryker never generate? Why not?**
 
@@ -73,3 +73,15 @@ Two survivors exposed cases absent from the handwritten set:
 **What does each approach find that the other does not?**
 
 Handwritten mutants cover feature-specific mistakes that this Stryker run did not generate: sharing attachment state, losing draft files, resetting the model, and the exact off-by-one boundaries in H1/H4. Stryker explores many more operator and branch variations, revealing untested selection comparisons and capacity behavior. Some survivors are also equivalent changes: mutant 67 removes a redundant file-type check already guaranteed by an earlier guard.
+
+## Strengthening
+
+- **Final Stryker score:** **95.5%** (191/200 killed).
+- **With equivalent mutants excluded:** **100%** (191 / (200 − 9)).
+
+Equivalent mutants:
+
+- **53, 67, 73, 118, 132:** The earlier guard guarantees matching part types before these expressions run. For each mutant, forcing the inner type check to `true` therefore selects exactly the same field as the original code.
+- **57, 71, 122, 136:** The earlier guard makes each mutated nonmatching-type fallback unreachable. Changing an unreachable fallback string cannot affect the comparison or any observable result.
+
+H5 still survives: model selection is outside these helper properties, thus no component-test setup was added.
