@@ -7,6 +7,7 @@ import {
   prependHistoryEntry,
   type PromptHistoryStoredEntry,
 } from "./history"
+import { historyUI } from "./history-ui.test-support"
 
 // Mix arbitrary text with empty, whitespace-only, multiline, and Unicode cases.
 // Every submitted entry below has a file, so even empty text is a valid prompt.
@@ -101,8 +102,8 @@ function move(state: ReturnType<typeof editor>, direction: "up" | "down") {
   return result.handled
 }
 
-// These properties check history.ts and its cursor instructions, not DOM caret
-// restoration (R4), model selection (R5), or the UI entry gate for R3.
+// Properties cover the helper and the real UI history callbacks. DOM caret
+// restoration (R4), model selection (R5), and the keyboard entry gate remain out of scope.
 describe("prompt-input history properties (P4 zm)", () => {
   // R1: Submitted prompts with identical text but different file attachments shall
   // remain distinct history entries; recall shall restore the corresponding file.
@@ -201,6 +202,30 @@ describe("prompt-input history properties (P4 zm)", () => {
       { numRuns: 200, seed: 42 },
     )
     console.info("P4 zm R3 passed: round-trip draft restoration (200 runs)")
+  })
+
+  // Rebecca Sucgang's A3 filters attachments in the UI after navigation succeeds.
+  // Round-trip through the actual navigateHistory/applyHistoryPrompt callbacks,
+  // observing the prompt passed to the editor instead of only the helper result.
+  test("R3: UI history application restores the complete draft and attachments", () => {
+    fc.assert(
+      fc.property(historyArbitrary(2), mixedPromptArbitrary, fc.nat({ max: 100 }), (entries, draft, choice) => {
+        const original = structuredClone(draft)
+        const ui = historyUI(entries, draft)
+        const depth = 2 + (choice % (entries.length - 1))
+        for (let index = 0; index < depth; index++) expect(ui.navigate("up")).toBe(true)
+        for (let index = 0; index < depth; index++) expect(ui.navigate("down")).toBe(true)
+
+        expect(ui.state.historyIndex).toBe(-1)
+        expect(ui.state.savedPrompt).toBeNull()
+        expect(ui.state.applyingHistory).toBe(false)
+        expect(ui.editor.prompt).toStrictEqual(original)
+        expect(ui.history).toStrictEqual(entries)
+        expect(draft).toStrictEqual(original)
+      }),
+      { numRuns: 200, seed: 42 },
+    )
+    console.info("P5 zm R3 passed: UI callback draft restoration (200 runs)")
   })
 
   // R6: Navigation shall not wrap. Up at the oldest entry leaves it unchanged;
