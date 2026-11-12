@@ -62,7 +62,7 @@ describe("agent create path rules (properties)", () => {
           const originalRules = buildPathPermissions(allowPaths, denyPaths)
           const shuffledRules = buildPathPermissions(orderedAllow, orderedDeny)
   
-          const paths = [
+          const paths: { path: string; expected: "allow" | "deny" }[] = [
             { path: "src/index.ts", expected: "allow" },
             { path: "lib/utils.ts", expected: "allow" },
             { path: "solutions/answer.ts", expected: "deny" },
