@@ -39,11 +39,11 @@ R3, R7, and R8 remain unchanged: their ordered labels, responsibility boundary, 
 
 OpenAI Codex assisted with reviewing all eight requirements, proposing the four properties and generators, drafting this traceability file, and implementing `debugging.property.test.ts`. This applies to R1, R2, R3, and R8. Jake Paje remains responsible for checking that each property represents the cited requirement and for the submitted code and documentation.
 
-## Project 5 hand-designed mutants
+## Hand-written mutants
 
 The predictions below were recorded before any mutant was applied. Each patch is independently applicable to the unmutated implementation.
 
-| Mutant | Requirement | Deliberate defect | Prediction before running | Initial actual result | Final result |
+| ID | Requirement targeted | Change | Predicted killer or outcome | Initial actual result | Final result |
 | --- | --- | --- | --- | --- | --- |
 | H1 | R1 | Add a contradictory instruction authorizing corrected code to the hint policy. | Survives: the original R1 property checks that a prohibition is present but does not reject a later contradictory authorization. | Survived, as predicted. | Killed after R1 was strengthened to reject positive correction-authorizing sentences; fixed seed counterexample: `"a"`. |
 | H2 | R2 | Replace the no-edit instruction with permission to edit the repository. | Killed by the R2 invariant's no-edit policy oracle. | Killed by R2; fixed seed later reproduces the same policy failure. | Killed. |
