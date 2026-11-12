@@ -42,3 +42,34 @@ Each patch is applied to commit `796bae507df8df951d07795ab70cf7e945f9e37f` on `z
 | [H3](../mutants/zm/H3.patch) | R3 | `history.ts`: filter file parts out of the draft snapshot when entering history. Returning restores the text but loses draft files, as if attachments were expected to be preserved elsewhere. | **R3**: every generated draft has 1–3 files, and the round-trip must restore the entire prompt exactly. R6 uses an empty draft, so it should miss this defect; R1/R2 should also pass. | **Killed by R3** (9 pass, 1 fail overall). Even the shrunk empty-text draft with one `src/a.ts` attachment returns without its file. R1/R2/R6 and all examples passed. |
 | [H4](../mutants/zm/H4.patch) | R6 | `history.ts`: change the upward boundary from `entries.length - 1` to `entries.length - 2`. Navigation stops one entry early, making the oldest entry unreachable in histories with two or more entries. | **R6**: the bounded-list oracle deliberately visits and presses beyond both endpoints. **R1** should also fail on its second Up; **R2/R3** can fail when their generated navigation reaches the prematurely blocked entry. | **Killed by R6 and also R1/R2/R3** (6 pass, 4 fail overall). A two-entry history suffices: the second Up returns unhandled instead of reaching the oldest entry. All six examples passed. |
 | [H5](../mutants/zm/H5.patch) | R5 | `prompt-input.tsx`: call `props.controls.model.selection.set(undefined)` while applying a history entry. This mistakenly treats recall as a fresh composer reset and clears the explicit model override. When Model B differs from the agent/default model, recalling history changes the model. | **None; expected survivor**: the four properties import `history.ts` and never mount `PromptInput` or observe model selection. R5 explicitly has no property. The six helper examples should also pass. | **Survived** (10 pass, 0 fail overall). All four properties completed 200 cases each; none loads the changed UI component or observes model selection. This is a coverage gap, not evidence that the mutation is equivalent. |
+
+
+## Stryker comparison
+
+**Configuration:** [packages/app/stryker.zm.config.json](../packages/app/stryker.zm.config.json).
+
+**HTML report:** [mutants/zm/mutation.html](../mutants/zm/mutation.html).
+
+**Mutation score: 63.5%** — 127 of 200 mutants killed; 73 survived. Only the four property tests ran, with **seed 42** and **200 cases per property**.
+
+**Which handwritten mutants did Stryker never generate? Why not?**
+
+None of the exact H1–H5 changes appeared in this run:
+
+| Mutant | Why it was not generated |
+|---|---|
+| H1, H4 | Stryker changed existing operators, such as `<` to `<=` and `-` to `+`. It did not insert H1's extra `- 1` or change H4's boundary constant from `1` to `2`. |
+| H2 | It replaced cloned objects with `{}`, but did not replace the nested clone with a shared reference to the original selection. |
+| H3 | It did not synthesize the new `.filter(...)` call that drops draft files. |
+| H5 | The UI component containing the model reset was outside the configured mutation scope. |
+
+**Which survivors were unexpected? Could a real developer plausibly write them?**
+
+Two survivors exposed cases absent from the handwritten set:
+
+- **77: ignore file-selection equality.** R1 varies file paths, so it misses the same file with different selections. Although replacing the expression with `true` looks artificial, comparing only the file path and forgetting the selection is a plausible developer mistake.
+- **30: remove the history-cap `.slice(0, max)`.** The handwritten set focused on navigation boundaries rather than storage limits. Accidentally dropping this cap during a refactor is plausible, and the properties never submit enough entries to detect it.
+
+**What does each approach find that the other does not?**
+
+Handwritten mutants cover feature-specific mistakes that this Stryker run did not generate: sharing attachment state, losing draft files, resetting the model, and the exact off-by-one boundaries in H1/H4. Stryker explores many more operator and branch variations, revealing untested selection comparisons and capacity behavior. Some survivors are also equivalent changes: mutant 67 removes a redundant file-type check already guaranteed by an earlier guard.

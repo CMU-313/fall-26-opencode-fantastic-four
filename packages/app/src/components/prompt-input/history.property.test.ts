@@ -107,7 +107,7 @@ describe("prompt-input history properties (P4 zm)", () => {
           expect(state.currentPrompt).toEqual(second)
         },
       ),
-      { numRuns: 200 },
+      { numRuns: 200, seed: 42 },
     )
     console.info("P4 zm R1 passed: metamorphic attachment recall (200 runs)")
   })
@@ -143,7 +143,7 @@ describe("prompt-input history properties (P4 zm)", () => {
         expect(state.currentPrompt).toEqual(original[selected].prompt)
         expect(state.entries).toEqual(original)
       }),
-      { numRuns: 200 },
+      { numRuns: 200, seed: 42 },
     )
     console.info("P4 zm R2 passed: invariant stored-entry preservation (200 runs)")
   })
@@ -174,7 +174,7 @@ describe("prompt-input history properties (P4 zm)", () => {
           expect(state.entries).toEqual(entries)
         },
       ),
-      { numRuns: 200 },
+      { numRuns: 200, seed: 42 },
     )
     console.info("P4 zm R3 passed: round-trip draft restoration (200 runs)")
   })
@@ -214,7 +214,7 @@ describe("prompt-input history properties (P4 zm)", () => {
           expect(state.entries).toEqual(entries)
         },
       ),
-      { numRuns: 200 },
+      { numRuns: 200, seed: 42 },
     )
     console.info("P4 zm R6 passed: model/oracle history boundaries (200 runs)")
   })

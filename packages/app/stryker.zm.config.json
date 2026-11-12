@@ -1,0 +1,25 @@
+{
+  "$schema": "../opencode/node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test ./src/components/prompt-input/history.property.test.ts"
+  },
+  "mutate": [
+    "src/components/prompt-input/history.ts:34-44",
+    "src/components/prompt-input/history.ts:62-73",
+    "src/components/prompt-input/history.ts:93-100",
+    "src/components/prompt-input/history.ts:115-140",
+    "src/components/prompt-input/history.ts:147-148",
+    "src/components/prompt-input/history.ts:173-256"
+  ],
+  "coverageAnalysis": "off",
+  "reporters": [
+    "html",
+    "clear-text",
+    "progress"
+  ],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "concurrency": 2
+}
