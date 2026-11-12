@@ -1,5 +1,7 @@
 import { createOpencodeClient } from "@opencode-ai/sdk/v2/client"
 import { OpenCode, type OpenCodeClient } from "@opencode-ai/client/promise"
+import { Schema } from "effect"
+import type { SessionWalkthrough } from "@opencode-ai/schema/session-walkthrough"
 import type { ServerConnection } from "@/context/server"
 import { decode64 } from "@/utils/base64"
 
@@ -44,8 +46,8 @@ export function createSdkForServer({
 export function createApiForServer(input: {
   server: ServerConnection.HttpBase
   fetch?: typeof globalThis.fetch
-}): OpenCodeClient {
-  return OpenCode.make({
+}): ServerApi {
+  const client = OpenCode.make({
     baseUrl: input.server.url,
     fetch: input.fetch,
     headers: input.server.password
@@ -57,6 +59,39 @@ export function createApiForServer(input: {
         }
       : undefined,
   })
+  return {
+    ...client,
+    session: {
+      ...client.session,
+      // The app still vendors an older client; retain its transport settings for this new endpoint.
+      async walkthrough(value: { sessionID: string }, options?: { signal?: AbortSignal }) {
+        const response = await (input.fetch ?? globalThis.fetch)(
+          `${input.server.url.replace(/\/$/, "")}/api/session/${encodeURIComponent(value.sessionID)}/walkthrough`,
+          {
+            method: "POST",
+            signal: options?.signal,
+            headers: input.server.password
+              ? {
+                  Authorization: `Basic ${authTokenFromCredentials({ username: input.server.username, password: input.server.password })}`,
+                }
+              : undefined,
+          },
+        )
+        if (!response.ok) throw new Error(`Walkthrough request failed (${response.status})`)
+        const { SessionWalkthrough } = await import("@opencode-ai/schema/session-walkthrough")
+        return Schema.decodeUnknownSync(Schema.Struct({ data: Schema.Array(SessionWalkthrough.Entry) }))(
+          await response.json(),
+        )
+      },
+    },
+  }
 }
 
-export type ServerApi = OpenCodeClient
+export type ServerApi = Omit<OpenCodeClient, "session"> & {
+  session: OpenCodeClient["session"] & {
+    walkthrough: (
+      input: { sessionID: string },
+      options?: { signal?: AbortSignal },
+    ) => Promise<{ readonly data: readonly SessionWalkthrough.Entry[] }>
+  }
+}

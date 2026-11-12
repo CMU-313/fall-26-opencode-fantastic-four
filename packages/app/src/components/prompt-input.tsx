@@ -82,6 +82,7 @@ import { createPromptInputTransientState } from "./prompt-input/transient-state"
 import { showToast } from "@/utils/toast"
 import { ImagePreview } from "@opencode-ai/ui/image-preview"
 import type { ReferenceInfo } from "@opencode-ai/sdk/v2/client"
+import { ExplanationLevelSelector } from "@/components/explanation-level-selector"
 
 export { createPromptInputHistory }
 export type { PromptInputControls, PromptInputHistory, PromptInputProps, PromptInputState, PromptInputSubmission }
@@ -1125,6 +1126,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             commentID: item.commentID,
             commentOrigin: item.commentOrigin,
             preview: item.preview,
+            selectionSnapshot: item.selectionSnapshot,
           })
         }
 
@@ -1781,6 +1783,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         </TooltipKeybind>
                       </div>
                     </Show>
+                    <ExplanationLevelSelector state={prompt} onSelect={restoreFocus} />
                   </Show>
                 </Show>
               </div>

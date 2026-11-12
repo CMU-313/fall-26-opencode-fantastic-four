@@ -93,6 +93,7 @@ import { TerminalPanel } from "@/pages/session/terminal-panel"
 import { TerminalPanelV2 } from "@/pages/session/terminal-panel-v2"
 import { useComposerCommands } from "@/pages/session/use-composer-commands"
 import { useSessionCommands } from "@/pages/session/use-session-commands"
+import { SelectionActionsV2 } from "@/pages/session/selection-actions-v2"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
 import { Identifier } from "@/utils/id"
 import { diffs as list } from "@/utils/diffs"
@@ -979,6 +980,19 @@ export default function Page() {
     return previewSelectedLines(content, { start: selection.startLine, end: selection.endLine })
   }
 
+  const addSelectionToContext = (path: string, range: SelectedLineRange) => {
+    const selection = selectionFromLines(range)
+    const content = file.get(path)?.content?.content
+    const selected = content?.split("\n").slice(selection.startLine - 1, selection.endLine).join("\n")
+    prompt.context.add({
+      type: "file",
+      path,
+      selection,
+      preview: selectionPreview(path, selection),
+      selectionSnapshot: selected ? checksum(selected) : undefined,
+    })
+  }
+
   const addCommentToContext = (input: {
     file: string
     selection: SelectedLineRange
@@ -1341,6 +1355,22 @@ export default function Page() {
       }
       comments.setFocus(focus)
     },
+    renderSelectionActions: (
+      input: { file: string; selection: SelectedLineRange },
+      controls: { close: VoidFunction },
+    ) => (
+      <SelectionActionsV2
+        onExplain={() => {
+          addSelectionToContext(input.file, input.selection)
+          command.trigger("context.explainSelection")
+          controls.close()
+        }}
+        onAdd={() => {
+          addSelectionToContext(input.file, input.selection)
+          controls.close()
+        }}
+      />
+    ),
   })
 
   // Latch: defer only the first diff render off the mount critical path. This Page
@@ -2107,6 +2137,25 @@ export default function Page() {
                     if (root) scheduleScrollState(root)
                   }}
                   userMessages={visibleUserMessages()}
+                  onRegenerateExplanation={({ level, files }) => {
+                    for (const item of prompt.context.items()) {
+                      if (item.selection && !item.comment?.trim()) prompt.context.remove(item.key)
+                    }
+                    for (const part of files) {
+                      const url = new URL(part.url)
+                      const start = Number(url.searchParams.get("start"))
+                      const end = Number(url.searchParams.get("end"))
+                      if (!Number.isInteger(start) || !Number.isInteger(end)) continue
+                      addSelectionToContext(file.normalize(part.url), { start, end })
+                    }
+                    prompt.explanationLevel.set(level)
+                    const text = language.t("prompt.explainSelection.requestAtLevel", {
+                      level: language.t(`prompt.explanationLevel.${level}`),
+                    })
+                    prompt.explanationRequest.start()
+                    prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
+                    focusInput()
+                  }}
                   setHistoryAnchor={(handlers) => {
                     captureHistoryAnchor = handlers.capture
                     restoreHistoryAnchor = handlers.restore

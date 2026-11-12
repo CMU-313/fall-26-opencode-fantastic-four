@@ -1,8 +1,115 @@
 import { describe, expect, test } from "bun:test"
 import type { Prompt } from "@/context/prompt"
 import { buildRequestParts } from "./build-request-parts"
+import { getExplanationInstructions, type ExplanationLevel } from "@/learning/explanation-level"
+
+const explanationRequest = (level: ExplanationLevel) =>
+  buildRequestParts({
+    prompt: [{ type: "text", content: "Explain the selected code.", start: 0, end: 26 }],
+    context: [
+      {
+        key: "ctx:selection",
+        type: "file",
+        path: "src/example.ts",
+        selection: { startLine: 4, startChar: 0, endLine: 8, endChar: 0 },
+        preview: "const example = true",
+      },
+    ],
+    images: [],
+    text: "Explain the selected code.",
+    messageID: `msg_${level}`,
+    sessionID: "ses_explanation",
+    sessionDirectory: "/repo",
+    explanationLevel: level,
+  })
 
 describe("buildRequestParts", () => {
+  test("builds a Beginner explanation request with the selected file lines", () => {
+    const result = explanationRequest("beginner")
+    const text = result.requestParts
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join(" ")
+    const file = result.requestParts.find((part) => part.type === "file")
+
+    expect(text).toContain(getExplanationInstructions("beginner"))
+    expect(text).toContain("Explain the selected code")
+    expect(text).toContain("Explanation level: beginner")
+    expect(text).toContain("ask for surrounding context")
+    expect(text).toContain("Do not edit")
+    expect(file?.type === "file" ? file.url : "").toBe("file:///repo/src/example.ts?start=4&end=8")
+  })
+
+  test.each(["intermediate", "advanced"] as const)("builds a distinct %s explanation request", (level) => {
+    const result = explanationRequest(level)
+    const text = result.requestParts
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join(" ")
+
+    expect(text).toContain(getExplanationInstructions(level))
+    expect(text).not.toContain(getExplanationInstructions("beginner"))
+  })
+
+  test("keeps disconnected selections as separate read-only file ranges", () => {
+    const context = [
+      {
+        key: "ctx:first",
+        type: "file" as const,
+        path: "src/example.ts",
+        selection: { startLine: 2, startChar: 0, endLine: 4, endChar: 0 },
+      },
+      {
+        key: "ctx:second",
+        type: "file" as const,
+        path: "src/example.ts",
+        selection: { startLine: 10, startChar: 0, endLine: 12, endChar: 0 },
+      },
+    ]
+    const before = structuredClone(context)
+    const result = buildRequestParts({
+      prompt: [{ type: "text", content: "Explain the selected code.", start: 0, end: 26 }],
+      context,
+      images: [],
+      text: "Explain the selected code.",
+      messageID: "msg_disconnected",
+      sessionID: "ses_explanation",
+      sessionDirectory: "/repo",
+      explanationLevel: "intermediate",
+    })
+    const files = result.requestParts.flatMap((part) => (part.type === "file" ? [part.url] : []))
+    const instructions = result.requestParts
+      .flatMap((part) => (part.type === "text" && part.synthetic ? [part.text] : []))
+      .join(" ")
+
+    expect(files).toEqual([
+      "file:///repo/src/example.ts?start=2&end=4",
+      "file:///repo/src/example.ts?start=10&end=12",
+    ])
+    expect(instructions).toContain("Do not edit or propose edits to the selected file.")
+    expect(context).toEqual(before)
+  })
+
+  test("does not add explanation instructions to an ordinary prompt", () => {
+    const result = buildRequestParts({
+      prompt: [{ type: "text", content: "Fix this bug", start: 0, end: 12 }],
+      context: [],
+      images: [],
+      text: "Fix this bug",
+      messageID: "msg_ordinary",
+      sessionID: "ses_ordinary",
+      sessionDirectory: "/repo",
+    })
+    const text = result.requestParts
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join(" ")
+
+    expect(text).not.toContain(getExplanationInstructions("beginner"))
+    expect(text).not.toContain(getExplanationInstructions("intermediate"))
+    expect(text).not.toContain(getExplanationInstructions("advanced"))
+  })
+
   test("builds typed request and optimistic parts without cast path", () => {
     const prompt: Prompt = [
       { type: "text", content: "hello", start: 0, end: 5 },

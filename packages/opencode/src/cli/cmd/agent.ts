@@ -10,13 +10,14 @@ import { EOL } from "os"
 import type { Argv } from "yargs"
 import { Effect } from "effect"
 import { effectCmd } from "../effect-cmd"
+import { Permission } from "@opencode-ai/schema/permission"
 
 type AgentMode = "all" | "primary" | "subagent"
 
 // Permission keys (not raw tool names). Multiple tools can map to a single
 // permission — e.g. write/edit/apply_patch all gate on `edit` — so we configure
 // agents at the permission level to match how the runtime actually enforces it.
-const AVAILABLE_PERMISSIONS = [
+export const AVAILABLE_PERMISSIONS = [
   "bash",
   "read",
   "edit",
@@ -29,6 +30,48 @@ const AVAILABLE_PERMISSIONS = [
   "lsp",
   "skill",
 ]
+
+// Builds a permission ruleset that denies any permissions not explicitly selected.
+export function buildPermissions(selected: string[]): Permission.Rule[] {
+  const permissions: Permission.Rule[] = []
+  for (const permission of AVAILABLE_PERMISSIONS) {
+    if (!selected.includes(permission)) {
+      permissions.push({ action: permission, resource: "*", effect: "deny" })
+    }
+  }
+  return permissions
+}
+
+
+// build path-scoped permission rules. last match wins --> deny rules first then allow for ordering
+export function buildPathPermissions(allowPaths: string[] | undefined, denyPaths: string[] | undefined): Permission.Rule[] {
+  const permissions: Permission.Rule[] = []
+
+  // order by deny first in order to follow evaluate() findLast (deny wins over allow for same resource)
+  if (denyPaths && denyPaths.length > 0) {
+    for (const path of denyPaths) {
+      permissions.push({ action: "read", resource: path, effect: "deny" })
+      permissions.push({ action: "edit", resource: path, effect: "deny" })
+    }
+  }
+  
+  if (allowPaths && allowPaths.length > 0) {
+    for (const path of allowPaths) {
+      permissions.push({ action: "read", resource: path, effect: "allow" })
+      permissions.push({ action: "edit", resource: path, effect: "allow" })
+    }
+  }
+
+  return permissions
+}
+
+
+// Parses a comma-separated path-pattern string (from a flag or prompt) into
+// an array of trimmed patterns, or undefined if the input is empty/absent.
+export function parsePathInput(input: string | undefined): string[] | undefined {
+  if (!input) return undefined
+  return input.split(",").map((p) => p.trim())
+}
 
 const AgentCreateCommand = effectCmd({
   command: "create",
@@ -57,7 +100,16 @@ const AgentCreateCommand = effectCmd({
         type: "string",
         alias: ["m"],
         describe: "model to use in the format of provider/model",
+      })
+      .option("allow-paths", {
+        type: "string",
+        describe: "comma-separated list of paths to allow access to (default: all)",
+      })
+      .option("deny-paths", {
+        type: "string",
+        describe: "comma-separated list of paths to deny access to (default: none)",
       }),
+
   handler: Effect.fn("Cli.agent.create")(function* (args) {
     const { InstanceRef } = yield* Effect.promise(() => import("@/effect/instance-ref"))
     const { Agent } = yield* Effect.promise(() => import("../../agent/agent"))
@@ -183,25 +235,55 @@ const AgentCreateCommand = effectCmd({
         mode = modeResult
       }
 
-      // Build permissions config — deny anything not explicitly selected.
-      const permissions: Record<string, "deny"> = {}
-      for (const permission of AVAILABLE_PERMISSIONS) {
-        if (!selected.includes(permission)) {
-          permissions[permission] = "deny"
-        }
+      // Build permissions config
+      const permissions = buildPermissions(selected)
+
+      // Get path restrictions (from flags if provided, otherwise prompt interactively)
+      let allowPaths: string[] | undefined
+      if (args["allow-paths"] !== undefined) {
+        allowPaths = parsePathInput(args["allow-paths"] as string)
+      } else if (!isFullyNonInteractive) {
+        const allowPathsResult = await prompts.text({
+          message: "Paths to allow (comma-separated globs, leave empty for none)",
+          placeholder: "src/**",
+        })
+        if (prompts.isCancel(allowPathsResult)) throw new UI.CancelledError()
+        allowPaths = parsePathInput(allowPathsResult)
       }
+
+      let denyPaths: string[] | undefined
+      if (args["deny-paths"] !== undefined) {
+        denyPaths = parsePathInput(args["deny-paths"] as string)
+      } else if (!isFullyNonInteractive) {
+        const denyPathsResult = await prompts.text({
+          message: "Paths to deny (comma-separated globs, leave empty for none)",
+          placeholder: "solutions/**",
+        })
+        if (prompts.isCancel(denyPathsResult)) throw new UI.CancelledError()
+        denyPaths = parsePathInput(denyPathsResult)
+      }
+
+      const pathPermissions = buildPathPermissions(allowPaths, denyPaths)
+
+
+      const allPermissions = [
+        ...permissions,
+        ...pathPermissions.filter((rule) => rule.effect === "deny"),
+        ...pathPermissions.filter((rule) => rule.effect === "allow"),
+      ]
+
 
       // Build frontmatter
       const frontmatter: {
         description: string
         mode: AgentMode
-        permission?: Record<string, "deny">
+        permissions?: Permission.Ruleset
       } = {
         description: generated.whenToUse,
         mode,
       }
-      if (Object.keys(permissions).length > 0) {
-        frontmatter.permission = permissions
+      if (allPermissions.length > 0) {
+        frontmatter.permissions = allPermissions
       }
 
       // Write file

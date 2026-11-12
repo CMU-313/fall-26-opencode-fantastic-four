@@ -5,6 +5,7 @@ import { createSimpleContext } from "@opencode-ai/ui/context"
 import { pluralCategory, type UiI18nPluralKey } from "@opencode-ai/ui/context/i18n"
 import { Persist, persisted } from "@/utils/persist"
 import { dict as en } from "@/i18n/en"
+import { mergeWithEnglishFallback } from "@/i18n/fallback"
 import { dict as uiEn } from "@opencode-ai/ui/i18n/en"
 import {
   createDesktopNativeBundle,
@@ -47,7 +48,7 @@ const base = i18n.flatten({ ...en, ...uiEn })
 const dicts = new Map<Locale, Dictionary>([["en", base]])
 
 const merge = (app: Promise<Source>, ui: Promise<Source>) =>
-  Promise.all([app, ui]).then(([a, b]) => ({ ...base, ...i18n.flatten({ ...a.dict, ...b.dict }) }) as Dictionary)
+  Promise.all([app, ui]).then(([a, b]) => mergeWithEnglishFallback(base, i18n.flatten({ ...a.dict, ...b.dict })))
 
 const loaders: Record<Exclude<Locale, "en">, () => Promise<Dictionary>> = {
   zh: () => merge(import("@/i18n/zh"), import("@opencode-ai/ui/i18n/zh")),

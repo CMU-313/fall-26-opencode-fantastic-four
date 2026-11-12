@@ -53,7 +53,10 @@ test("opens and searches project files inline", async ({ page }) => {
         { name: "src", path: "src", absolute: `${directory}/src`, type: "directory", ignored: false },
       ]
     },
-    fileContent: (path) => ({ type: "text", content: `contents:${path}` }),
+    fileContent: (path) => ({
+      type: "text",
+      content: path === "README.md" ? "contents:README.md\nsecond line" : `contents:${path}`,
+    }),
     findFiles: (input) => {
       searches.push(input)
       return input.query === "nested" ? ["src/nested.ts"] : []
@@ -113,6 +116,24 @@ test("opens and searches project files inline", async ({ page }) => {
   await expect(sidebarToggle).toBeEnabled()
   await expect(panel.getByText("contents:README.md", { exact: true })).toBeVisible()
   await expect(sidebar).toHaveCount(0)
+
+  const firstLine = panel.locator('[data-column-number="1"]')
+  await firstLine.click()
+  const selectionEditor = panel.locator('[data-component="line-comment-v2"][data-variant="editor"]')
+  await expect(selectionEditor.getByRole("button", { name: "Explain selected code" })).toBeVisible()
+  await selectionEditor.getByRole("button", { name: "More selected code actions" }).click()
+  await page.getByRole("menuitem", { name: "Add selection to context" }).click()
+  await expect(page.getByText("README.md:1", { exact: true })).toBeVisible()
+
+  await panel.locator('[data-column-number="2"]').click()
+  await selectionEditor.getByRole("button", { name: "Explain selected code" }).click()
+  await expect(page.getByText("README.md:2", { exact: true })).toBeVisible()
+  const composer = page.locator('[data-component="prompt-input-v2"]')
+  const input = composer.locator('[data-component="prompt-input"]')
+  await expect(input).toContainText("Explain the selected code at the Beginner level.")
+  await expect(composer.getByText("Explanation Depth:", { exact: true })).toBeVisible()
+  await composer.getByLabel("Explanation level").click()
+  await page.getByRole("option", { name: "Advanced" }).click()
 
   await panel.getByRole("button", { name: "Open file" }).click()
   await expect(panel.getByRole("tab", { name: "README.md" })).toHaveCount(0)

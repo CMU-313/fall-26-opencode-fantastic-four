@@ -7,7 +7,10 @@ import {
   SessionReviewV2,
   SessionReviewV2Sidebar,
 } from "@opencode-ai/session-ui/v2/session-review-v2"
-import { SessionReviewFilePreviewV2 } from "@opencode-ai/session-ui/v2/session-review-file-preview-v2"
+import {
+  SessionReviewFilePreviewV2,
+  type SessionReviewFilePreviewV2Props,
+} from "@opencode-ai/session-ui/v2/session-review-file-preview-v2"
 import { DiffChanges } from "@opencode-ai/ui/v2/diff-changes-v2"
 import type {
   SessionReviewComment,
@@ -52,6 +55,7 @@ export type ReviewPanelV2Props = {
   comments?: SessionReviewComment[]
   focusedComment?: SessionReviewFocus | null
   onFocusedCommentChange?: (focus: SessionReviewFocus | null) => void
+  renderSelectionActions?: SessionReviewFilePreviewV2Props["renderSelectionActions"]
 }
 
 export function ReviewPanelV2(props: ReviewPanelV2Props) {
@@ -158,6 +162,7 @@ export function ReviewPanelV2(props: ReviewPanelV2Props) {
                   comments={props.comments}
                   focusedComment={props.focusedComment}
                   onFocusedCommentChange={props.onFocusedCommentChange}
+                  renderSelectionActions={props.renderSelectionActions}
                 />
               )}
             </Show>

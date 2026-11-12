@@ -482,6 +482,17 @@ export type SessionsPromptOutput = {
   }
 }["data"]
 
+export type SessionsWalkthroughInput = { readonly sessionID: { readonly sessionID: string }["sessionID"] }
+
+export type SessionsWalkthroughOutput = {
+  readonly data: ReadonlyArray<{
+    readonly file: string
+    readonly whatChanged: string
+    readonly whyChanged: string
+    readonly concepts: ReadonlyArray<string>
+  }>
+}["data"]
+
 export type SessionsCompactInput = { readonly sessionID: { readonly sessionID: string }["sessionID"] }
 
 export type SessionsCompactOutput = void

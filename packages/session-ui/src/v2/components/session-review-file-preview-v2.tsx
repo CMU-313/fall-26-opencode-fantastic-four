@@ -8,7 +8,7 @@ import { mediaKindFromPath } from "../../pierre/media"
 import { cloneSelectedLineRange, previewSelectedLines } from "../../pierre/selection-bridge"
 import type { FileContent, SnapshotFileDiff, VcsFileDiff } from "@opencode-ai/sdk/v2"
 import type { FileDiffInfo } from "@opencode-ai/client/promise"
-import { createEffect, createMemo, onCleanup, Show, untrack } from "solid-js"
+import { createEffect, createMemo, onCleanup, Show, untrack, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
 import { Dynamic } from "solid-js/web"
 import { normalize, text, type ViewDiff } from "../../components/session-diff"
@@ -43,6 +43,10 @@ export type SessionReviewFilePreviewV2Props = {
   comments?: SessionReviewComment[]
   focusedComment?: SessionReviewFocus | null
   onFocusedCommentChange?: (focus: SessionReviewFocus | null) => void
+  renderSelectionActions?: (
+    input: { file: string; selection: SelectedLineRange },
+    controls: { close: VoidFunction },
+  ) => JSX.Element
 }
 
 function statusLabel(status: ViewDiff["status"]) {
@@ -159,6 +163,8 @@ export function SessionReviewFilePreviewV2(props: SessionReviewFilePreviewV2Prop
           <ReviewCommentMenuV2 labels={props.lineCommentActions!} onEdit={controls.edit} onDelete={controls.remove} />
         )
       : undefined,
+    renderDraftActions: (selection, controls) =>
+      props.renderSelectionActions?.({ file: props.file, selection }, controls),
   })
 
   onCleanup(() => {

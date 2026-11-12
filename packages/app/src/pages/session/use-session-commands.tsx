@@ -8,12 +8,14 @@ import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
 import { usePrompt } from "@/context/prompt"
 import { useSDK } from "@/context/sdk"
+import { useServerProtocol } from "@/context/server-sdk"
 import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
 import { showToast } from "@/utils/toast"
 import { downloadSessionExport, fetchSessionExport, sessionExportFilename } from "@/utils/session-export"
 import { findLast } from "@opencode-ai/core/util/array"
+import { sampledChecksum } from "@opencode-ai/core/util/encode"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { extractPromptFromParts } from "@/utils/prompt"
 import { Message, Part, UserMessage } from "@opencode-ai/sdk/v2"
@@ -28,6 +30,8 @@ export type SessionCommandContext = {
   review?: () => boolean
   fileBrowser?: () => boolean
 }
+
+const MAX_EXPLANATION_LINES = 400
 
 const withCategory = (category: string) => {
   return (option: Omit<CommandOption, "category">): CommandOption => ({
@@ -44,6 +48,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const permission = usePermission()
   const prompt = usePrompt()
   const sdk = useSDK()
+  const protocol = useServerProtocol()
   const settings = useSettings()
   const sync = useSync()
   const terminal = useTerminal()
@@ -115,9 +120,15 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     return previewSelectedLines(content, { start: selection.startLine, end: selection.endLine })
   }
 
+  const selectionSnapshot = (path: string, selection: FileSelection) => {
+    const content = file.get(path)?.content?.content
+    if (!content) return undefined
+    return sampledChecksum(content.split("\n").slice(selection.startLine - 1, selection.endLine).join("\n"))
+  }
+
   const addSelectionToContext = (path: string, selection: FileSelection) => {
     const preview = selectionPreview(path, selection)
-    prompt.context.add({ type: "file", path, selection, preview })
+    prompt.context.add({ type: "file", path, selection, preview, selectionSnapshot: selectionSnapshot(path, selection) })
   }
 
   const canAddSelectionContext = () => {
@@ -290,6 +301,64 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     addSelectionToContext(path, selectionFromLines(range))
   }
 
+  const explainSelection = () => {
+    const tab = activeFileTab()
+    const path = tab ? file.pathFromTab(tab) : undefined
+    const range = path ? (file.selectedLines(path) as SelectedLineRange | null | undefined) : undefined
+    const context = prompt.context.items().filter((item) => item.selection)
+    if (!range && context.length === 0) {
+      showToast({
+        title: language.t("toast.context.noLineSelection.title"),
+        description: language.t("toast.context.noLineSelection.description"),
+      })
+      return
+    }
+
+    const unique = new Map(
+      context.map((item) => [`${item.path}:${item.selection!.startLine}:${item.selection!.endLine}`, item.selection!]),
+    )
+    if (path && range) {
+      const selection = selectionFromLines(range)
+      unique.set(`${path}:${selection.startLine}:${selection.endLine}`, selection)
+    }
+    const lines = [...unique.values()].reduce(
+      (total, selection) => total + selection.endLine - selection.startLine + 1,
+      0,
+    )
+    if (lines > MAX_EXPLANATION_LINES) {
+      showToast({
+        title: language.t("prompt.explanation.error.tooLarge.title"),
+        description: language.t("prompt.explanation.error.tooLarge.description", {
+          lines,
+          max: MAX_EXPLANATION_LINES,
+        }),
+      })
+      return
+    }
+
+    const changed = context.some(
+      (item) =>
+        item.selectionSnapshot &&
+        item.selection &&
+        selectionSnapshot(item.path, item.selection) !== item.selectionSnapshot,
+    )
+    if (changed) {
+      showToast({
+        title: language.t("prompt.explanation.warning.changed.title"),
+        description: language.t("prompt.explanation.warning.changed.description"),
+      })
+    }
+
+    if (path && range) addSelectionToContext(path, selectionFromLines(range))
+    const level = prompt.explanationLevel.current()
+    const text = language.t("prompt.explainSelection.requestAtLevel", {
+      level: language.t(`prompt.explanationLevel.${level}`),
+    })
+    prompt.explanationRequest.start()
+    prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
+    focusInput()
+  }
+
   const openTerminal = () => {
     if (terminal.all().length > 0) terminal.new({ focus: true })
     if (terminal.all().length === 0) terminal.requestFocus()
@@ -412,6 +481,23 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     })
   }
 
+  const walkthrough = () => {
+    const sessionID = params.id
+    if (!sessionID) return
+    const session = sdk().api.session
+    const owner = sessionOwnership.capture()
+    void openDialog(
+      () => import("@/components/dialog-walkthrough"),
+      (module) =>
+        dialog.show(() => (
+          <module.DialogWalkthrough
+            current={owner.current}
+            request={(signal) => session.walkthrough({ sessionID }, { signal })}
+          />
+        )),
+    )
+  }
+
   const fork = () => {
     void openDialog(
       () => import("@/components/dialog-fork"),
@@ -490,6 +576,14 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       onSelect: fork,
     }),
     sessionCommand({
+      id: "session.walkthrough",
+      title: language.t("command.session.walkthrough"),
+      description: language.t("command.session.walkthrough.description"),
+      slash: "walkthrough",
+      disabled: !params.id || protocol() !== "v2",
+      onSelect: walkthrough,
+    }),
+    sessionCommand({
       id: "session.export",
       title: language.t("command.session.export"),
       description: language.t("command.session.export.description"),
@@ -528,6 +622,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       keybind: "mod+shift+l",
       disabled: !canAddSelectionContext(),
       onSelect: addSelection,
+    }),
+    contextCommand({
+      id: "context.explainSelection",
+      title: language.t("command.context.explainSelection"),
+      description: language.t("command.context.explainSelection.description"),
+      onSelect: explainSelection,
     }),
   ]
 
