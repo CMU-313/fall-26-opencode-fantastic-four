@@ -45,6 +45,10 @@ export function hints(template: string) {
   return result
 }
 
+export function replaceArguments(template: string, input: string) {
+  return template.replaceAll("$ARGUMENTS", () => input)
+}
+
 export const Default = {
   INIT: "init",
   REVIEW: "review",

@@ -1,0 +1,11 @@
+diff --git a/packages/opencode/src/command/template/debug-hint.txt b/packages/opencode/src/command/template/debug-hint.txt
+--- a/packages/opencode/src/command/template/debug-hint.txt
++++ b/packages/opencode/src/command/template/debug-hint.txt
+@@ -1,6 +1,6 @@
+ Help the student debug the problem described below with progressive hints.
+ 
+-Review the conversation before answering. Count only earlier assistant responses produced for this same debugging problem by `/debug-hint`, then provide the first level not already given:
++Review the conversation before answering. Count every earlier assistant response, then provide the first level not already given:
+ 
+ 1. Conceptual hint: identify the relevant concept, behavior, or class of defect and explain why it is worth investigating.
+ 2. Targeted hint: direct attention to a relevant file, function, variable, condition, or similarly narrow code area and suggest one useful observation or diagnostic experiment.

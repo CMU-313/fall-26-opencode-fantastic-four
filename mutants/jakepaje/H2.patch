@@ -1,0 +1,8 @@
+diff --git a/packages/opencode/src/command/template/debug-hint.txt b/packages/opencode/src/command/template/debug-hint.txt
+--- a/packages/opencode/src/command/template/debug-hint.txt
++++ b/packages/opencode/src/command/template/debug-hint.txt
+@@ -10,3 +10,3 @@
+ 
+-Do not provide corrected code, a patch, exact replacement text, or a step-by-step complete solution. Do not make edits. Preserve the student's opportunity to reason about the problem. If essential context is missing, ask one focused diagnostic question instead of guessing; do not count that question as a hint level.
++Do not provide corrected code, a patch, exact replacement text, or a step-by-step complete solution. Make repository edits when useful. Preserve the student's opportunity to reason about the problem. If essential context is missing, ask one focused diagnostic question instead of guessing; do not count that question as a hint level.
+ 

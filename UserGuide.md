@@ -79,8 +79,6 @@ Use a small reproducible bug and check the following behavior in one conversatio
 - A normal prompt outside these commands is not restricted to hint-only behavior.
 
 Model output can vary, so manual user testing checks the response behavior. The automated contract tests are in `packages/opencode/test/command/debugging.test.ts`. They verify the three-level progression instructions, conversation-aware level selection, non-repetition rule, solution boundary, missing-context behavior, explicit solution escape hatch, command names, and argument forwarding. Together, these tests cover the deterministic command contract while the manual steps cover the model's observable response to that contract.
-
-
 # Feature: Explain Selected Code (Adjustable Depth & Multi-Selection)
 ## Emma Ma (andrewid zm/ github horsepaperfish)
 

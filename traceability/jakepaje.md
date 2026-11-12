@@ -1,0 +1,101 @@
+# Project 4 traceability — Jake Paje (`jakepaje`)
+
+## Requirements review and property traceability
+
+| ID | Interview evidence (preserved from Project 3) | Project 3 requirement | Acceptance criteria | Changed in P4? | Property and kind | Test | Mutants it kills |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| R1 | C-2: The feature should not immediately provide the complete answer. S-3: `/debug-hint` should not provide the complete solution. O-2, O-3: It should not provide corrected code or immediately identify exact lines. | Before the user explicitly invokes `/debug-solution`, `/debug-hint` must not provide corrected code, a complete replacement function, or a patch that directly solves the problem. | Given a new debugging conversation, when the user requests all three `/debug-hint` levels, none of the three responses contains a complete corrected implementation or patch. When the user invokes `/debug-solution`, the response may provide the complete correction. | Yes | Invariant: arbitrary user arguments cannot replace the trusted hint-only policy, while the solution command has a distinct correction policy. | `R1 invariant: generated requests cannot replace the hint-only policy` | H1, H5 |
+| R2 | C-3: The teaching feature should never modify code or files. S-3: The system should never silently make changes because that would be confusing. | Invoking `/debug-hint` must not modify project files or call tools that write to the user’s repository. | Given a temporary repository with known file hashes, when `/debug-hint` is invoked, no file-writing or editing tool is called and all file hashes remain unchanged after the response. | Yes | Invariant: rendering arbitrary requests leaves arbitrary generated repository snapshots unchanged and exposes no write target. | `R2 invariant: rendering a hint leaves every generated repository snapshot unchanged` | H2 |
+| R3 | S-7: The differences among Conceptual, Targeted, and Specific are unclear and should be defined more objectively. O-2, O-3: Early hints should avoid exact lines, corrected code, and excessive detail. | The three hint levels must follow defined disclosure boundaries and appear in the order Conceptual, Targeted, and Specific. | For three consecutive `/debug-hint` requests about the same bug, the responses are labeled Hint 1 - Conceptual, Hint 2 - Targeted, and Hint 3 - Specific in that order. The Conceptual hint identifies only the general concept, the Targeted hint identifies the relevant function or code area, and the Specific hint identifies the failure condition without providing corrected code. | No | Model/oracle: the levels parsed from production policy agree with the three-stage reference model for generated prior-hint counts, including the post-level-3 boundary. | `R3 model: every prior-hint count maps to the documented next disclosure level` | H3 |
+| R4 | C-5: After returning to hints, the interviewee preferred restarting at the first level. S-4: The system could make previous hints available or explain that all hints have already been shown. | After `/debug-solution` has been shown, a later `/debug-hint` request for the same problem must acknowledge that the solution was already provided and allow the user to explicitly restart the hint progression. | Given a conversation in which the user has received `/debug-solution`, when the user invokes `/debug-hint` for the same problem, OpenCode states that the solution was already shown and offers to restart at Hint 1 - Conceptual. It does not silently continue at an undefined level. | Yes | Not property-tested in this submission. | — | — |
+| R5 | C-6: A small change should preserve the main answer and relevant code area. S-6: The system should determine whether the underlying problem is the same. O-5, O-6: The general focus should remain consistent unless the conclusion or relevant function changes significantly. | Rephrasing or adding details about the same underlying bug must preserve the current hint progression, while changing to a different bug or code area must restart the progression at the Conceptual level. | Given that the user has received Hint 1 for `average([])`, when they rephrase the empty-array problem and invoke `/debug-hint` again, the system returns Hint 2. When they instead ask about an unrelated sorting-function bug, the system returns Hint 1 - Conceptual for the new problem. | Yes | Not property-tested in this submission. | — | — |
+| R6 | C-4: Later responses should remain consistent with earlier explanations. C-8: Consecutive hints should lead into one another. O-5: The destination may remain the same while the reasoning adapts to new information. | Each later hint must build on the earlier hints, remain consistent with their identified problem area, and add new information rather than merely repeating the previous response. | Given a fixed conversation containing Hint 1, when Hint 2 is requested, the model receives the earlier hint in its context and the new response is not identical to Hint 1. It retains the same relevant problem area and adds at least one more-specific piece of debugging guidance. The same condition applies from Hint 2 to Hint 3. | Yes | Not property-tested in this submission. | — | — |
+| R7 | S-8: The feature should clearly state whether the user or OpenCode is expected to make the change. C-3 and S-3: The hint feature should not modify files. | Every debugging hint must clearly communicate that it is guidance and that the user is responsible for making any code changes. | Given any `/debug-hint` response, the response does not claim that OpenCode changed the code and includes guidance directed to the user, such as an observation to make or an area to inspect. No file modification occurs. | No | Not property-tested in this submission. | — | — |
+| R8 | O-8: Learning is iterative, and the user should be able to respond to a hint, explain their understanding, and ask for clarification. | The user must be able to discuss or clarify a hint without automatically advancing or resetting the hint progression. | Given that the user has received Hint 1, when they send a normal follow-up question about that hint, OpenCode answers the clarification without labeling it as Hint 2. When the user later invokes `/debug-hint` for the same bug, the system continues with Hint 2 - Targeted. | No | Metamorphic: inserting generated clarification turns leaves the same-problem hint count and next level unchanged. | `R8 metamorphic: inserting clarifications preserves the next hint level` | H4 |
+
+## Requirement changes
+
+The revisions below preserve the cited learning and control needs while replacing claims about unrestricted model output with contracts the command implementation can enforce and check.
+
+| ID | Original wording | Revised P4 wording | Why it changed |
+| --- | --- | --- | --- |
+| R1 | Before the user explicitly invokes `/debug-solution`, `/debug-hint` must not provide corrected code, a complete replacement function, or a patch that directly solves the problem. | The `/debug-hint` command must place an immutable hint-only policy before user-supplied problem text; that policy forbids corrected code, replacement functions, and patches. Only `/debug-solution` may include a complete-correction policy. | Guaranteeing every possible probabilistic model response is not feasible in a fast deterministic test. The revised boundary is enforceable at the command layer and preserves the interviewees’ need not to be handed the answer. |
+| R2 | Invoking `/debug-hint` must not modify project files or call tools that write to the user’s repository. | Constructing a `/debug-hint` request must be a pure operation: it leaves repository contents unchanged, exposes only the problem-argument placeholder, and instructs the model not to make edits. | The existing template command does not own the global tool-permission system, so it cannot prove that an arbitrary downstream model never calls a write tool. Purity plus an explicit no-edit policy is feasible and directly protects the user-control need. |
+| R4 | After `/debug-solution` has been shown, a later `/debug-hint` request for the same problem must acknowledge that the solution was already provided and allow the user to explicitly restart the hint progression. | After `/debug-solution`, a later `/debug-hint` for the same problem must acknowledge the prior solution and offer a fresh Hint 1; progression restarts only after the user confirms. | “Allow explicitly” did not define the state transition. The revision makes the observable confirmation boundary testable while preserving the preference to restart. |
+| R5 | Rephrasing or adding details about the same underlying bug must preserve the current hint progression, while changing to a different bug or code area must restart the progression at the Conceptual level. | When conversation context identifies the same file/function and failure condition, added details preserve progression; when either the identified code area or failure condition changes, the next `/debug-hint` starts at Conceptual. | Arbitrary semantic equivalence between natural-language bug reports is not objectively checkable. The revised identifiers provide a concrete oracle while retaining continuity for the same problem. |
+| R6 | Each later hint must build on the earlier hints, remain consistent with their identified problem area, and add new information rather than merely repeating the previous response. | Each later hint receives earlier hints in context, retains the same identified code area unless new evidence contradicts it, and includes at least one disclosure allowed only at its new level. | “Build on” and “new information” were vague. The revision defines observable context, consistency, and disclosure conditions. |
+
+R3, R7, and R8 remain unchanged: their ordered labels, responsibility boundary, and non-advancing clarification behavior already have concrete observable outcomes. R4–R6 were reviewed but are not among the four properties selected for this submission.
+
+## Test execution and triage
+
+- Initial deterministic command tests passed before adding the properties.
+- Property tests use generated problem text, repository snapshots, prior-hint counts, conversations, and clarification insertions. They include empty/boundary progression states and adversarial user strings rather than sampling only friendly prose.
+- The first property run found the shrunk counterexample `" "` for R1 and `{ files: {}, request: " " }` for R2. Classification: **wrong test/generator**, not a product bug. The assertions modeled the source file as ending at the substituted argument, but the production template has a trailing newline; whitespace-only requests also add no useful debugging problem. The generator was narrowed to non-empty printable request characters and the oracle was corrected to include the production newline. No requirement or product behavior was weakened.
+- A later package-wide run shrank R2 to `{ files: {}, request: "$$a" }`. Classification: **code bug**. `String.replaceAll` interpreted dollar replacement patterns in user arguments, so `$$a` became `$a` instead of being preserved literally. Production command expansion now uses a replacement callback, and the property oracle uses the same literal-insertion contract.
+- After the fixes, all four properties and all three existing debugging-command tests pass in the focused run.
+
+## AI assistance
+
+OpenAI Codex assisted with reviewing all eight requirements, proposing the four properties and generators, drafting this traceability file, and implementing `debugging.property.test.ts`. This applies to R1, R2, R3, and R8. Jake Paje remains responsible for checking that each property represents the cited requirement and for the submitted code and documentation.
+
+## Hand-written mutants
+
+The predictions below were recorded before any mutant was applied. Each patch is independently applicable to the unmutated implementation.
+
+| ID | Requirement targeted | Change | Predicted killer or outcome | Initial actual result | Final result |
+| --- | --- | --- | --- | --- | --- |
+| H1 | R1 | Add a contradictory instruction authorizing corrected code to the hint policy. | Survives: the original R1 property checks that a prohibition is present but does not reject a later contradictory authorization. | Survived, as predicted. | Killed after R1 was strengthened to reject positive correction-authorizing sentences; fixed seed counterexample: `"a"`. |
+| H2 | R2 | Replace the no-edit instruction with permission to edit the repository. | Killed by the R2 invariant's no-edit policy oracle. | Killed by R2; fixed seed later reproduces the same policy failure. | Killed. |
+| H3 | R3 | Swap the Targeted and Specific disclosure stages. | Killed by the R3 model/oracle comparison. | Killed by R3 at prior-hint count `0`. | Killed. |
+| H4 | R8 | Count every assistant response instead of only same-problem hint responses. | Killed by the R8 metamorphic property's conversation-policy oracle. | Killed by R8 because the required same-problem counting rule disappeared. | Killed. |
+| H5 | R1 | Reintroduce replacement-pattern interpretation for `$ARGUMENTS`. | Survives: the agent-authored property duplicates argument expansion in a local test helper rather than calling production rendering code. | Survived, as predicted. | Killed after the property called production `replaceArguments` with generated replacement-sensitive strings; shrunk counterexample: `"a$$a"`. |
+
+## Stryker comparison
+
+The fixed fast-check seed is **3132026**. The initial Stryker run created 17 mutants, killed 8, and reported **47.06%**; after strengthening the properties, it killed 16 of 17 and reported a raw score of **94.12%**. Excluding the one equivalent mutant, the final score is **100% (16/16 non-equivalent mutants killed)**.
+
+### Hand-written mutants Stryker did not generate
+
+Stryker did not generate H1–H4 because those defects change the natural-language command policy in `debug-hint.txt`, while the configuration intentionally mutates only the TypeScript functions exercised by the properties. It also did not generate the exact H5 callback-to-string-overload change: its standard AST operators changed strings, conditions, calls, blocks, arrays, and regular expressions, but did not substitute that API overload. The hand-designed set therefore captured requirement-level policy contradictions and a JavaScript replacement-string pitfall that automatic local syntax changes did not propose.
+
+### Stryker survivors I did not anticipate
+
+The initial survivors included shortening `/\$\d+/g` to `/\$\d/g`, removing `.sort()`, discarding the loop body, and forcing placeholder conditions true or false. The regex-quantifier and missing-sort mutants are plausible developer mistakes, especially during a cleanup of placeholder parsing; I had not considered them because my Project 4 property used only the `$ARGUMENTS` placeholder. Adding generated numbered-placeholder lists, duplicates, multi-digit positions, and marker-absent cases killed all of those observable variants.
+
+### What the approaches found
+
+Hand-written mutation was better at semantic defects tied directly to R1, R2, R3, and R8, including contradictory instructions that still retained the expected words. Stryker was better at systematically enumerating small implementation defects in `hints` and `replaceArguments`, revealing that the generator ignored numbered placeholders and replacement-sensitive inputs. Together they connected interview-level behavior to both policy text and low-level parsing behavior.
+
+### Equivalent survivor
+
+The sole final survivor changes `if (numbered)` to `if (true)`. When `numbered` is an array, both versions execute the identical loop; when it is `null`, `new Set(null)` creates an empty set and the forced loop performs zero iterations, so the returned array is still identical for every string input. Because this mutation cannot change output or observable side effects, no property can distinguish it, so it is excluded from the adjusted score.
+
+### Strengthening evidence
+
+No example-based tests were added. R1 now uses generated strings guaranteed to contain JavaScript replacement tokens and calls the production `replaceArguments` function; R2 generates arbitrary numbered placeholders, duplicates, multi-digit positions, and optional `$ARGUMENTS`, then compares production discovery with a set-and-sort oracle. The focused property run passes all four properties, H1 and H5 now fail with the fixed seed, and the final Stryker run kills 16 of 17 mutants.
+
+## Agent failure case
+
+### Transcript excerpt
+
+The Project 4 request to Codex included: “write at least four meaningful fast-check property tests across at least two kinds tied to distinct requirements.” Codex then wrote the following R1 approach (excerpted from its generated test):
+
+```ts
+function expand(template: string, problem: string) {
+  return template.replaceAll("$ARGUMENTS", () => problem)
+}
+
+fc.property(problem, (request) => {
+  const rendered = expand(PROMPT_DEBUG_HINT, request)
+  expect(rendered.slice(trusted.length)).toBe(`\n\n${request}\n`)
+})
+```
+
+### Surviving mutant and weakness
+
+H5 changed production rendering from a callback replacement to a string replacement, which interprets sequences such as `$$`; the agent-written R1 property still passed. The property looked strong because it generated hundreds of strings and checked exact output, but its oracle invoked a test-local `expand` function that already contained the correct implementation, so it never exercised the mutated production path. Its unconstrained random generator also did not reliably produce a replacement-sensitive token under a fixed 100-run seed.
+
+### Strengthened property and evidence
+
+The strengthened property imports production `replaceArguments` and uses a composite generator that always inserts one of `$$`, `$&`, ``$` ``, `$'`, or `$1` between arbitrary prefixes and suffixes. With H5 applied, fast-check fails immediately and shrinks to `"a$$a"`; after reverting H5, all four properties pass with seed 3132026. The final Stryker run also kills every non-equivalent mutation in the covered production functions.
