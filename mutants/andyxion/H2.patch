@@ -1,0 +1,13 @@
+diff --git a/packages/core/src/permission.ts b/packages/core/src/permission.ts
+index 3f28632..9dae4c3 100644
+--- a/packages/core/src/permission.ts
++++ b/packages/core/src/permission.ts
+@@ -77,7 +77,7 @@ export function evaluate(action: string, resource: string, ...rulesets: Permissi
+   return (
+     rulesets
+       .flat()
+-      .findLast((rule) => Wildcard.match(action, rule.action) && Wildcard.match(resource, rule.resource)) ?? {
++      .findLast((rule) => Wildcard.match(action, rule.action)) ?? {
+       action,
+       resource: "*",
+       effect: "ask",

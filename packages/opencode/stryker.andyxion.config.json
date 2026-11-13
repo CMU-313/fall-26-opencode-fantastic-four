@@ -1,0 +1,11 @@
+{
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test test/cli/andyxion-agent.property.test.ts"
+  },
+  "mutate": [
+    "src/cli/cmd/agent.ts:46-79"
+  ],
+  "coverageAnalysis": "off",
+  "reporters": ["html", "clear-text", "progress"]
+}
