@@ -7,6 +7,8 @@ import {
 
 import { PermissionV2 } from "@opencode-ai/core/permission"
 
+fc.configureGlobal({ seed: 42 })
+
 // R6: Path-list input must trim surrounding whitespace and ignore blank
 // entries without changing valid path order.
 // Kind: metamorphic
@@ -21,10 +23,31 @@ test("R6: whitespace and blank entries do not change parsed paths", () => {
         const normal = paths.join(",")
         const noisy = paths.map((path) => ` ${path} `).join(", ,")
 
-        expect(parsePathInput(noisy)).toEqual(parsePathInput(normal))
+        // Both forms must parse to the actual expected path list.
+        expect(parsePathInput(normal)).toEqual(paths)
+        expect(parsePathInput(noisy)).toEqual(paths)
       },
     ),
   )
+})
+
+// R6: Inputs containing no valid paths must produce no path restrictions.
+// Kind: invariant
+test("R6: blank-only path inputs produce no paths", () => {
+  fc.assert(
+    fc.property(
+      fc.array(
+        fc.constantFrom("", " ", "  ", "\t", "\n"),
+        { minLength: 0, maxLength: 5 },
+      ),
+      (parts) => {
+        const input = parts.join(",")
+        expect(parsePathInput(input)).toBeUndefined()
+      },
+    ),
+  )
+
+  expect(parsePathInput(undefined)).toBeUndefined()
 })
 
 // R1: A denied read or edit must stop before accessing or modifying the file.
@@ -39,11 +62,38 @@ test("R1: matching deny rules remain denied", () => {
 
         const rules = buildPathPermissions(undefined, [pattern])
 
+        expect(rules).toEqual([
+          { action: "read", resource: pattern, effect: "deny" },
+          { action: "edit", resource: pattern, effect: "deny" },
+        ])
+
         expect(PermissionV2.evaluate("read", file, rules).effect).toBe("deny")
         expect(PermissionV2.evaluate("edit", file, rules).effect).toBe("deny")
       },
     ),
   )
+})
+
+// R1: Missing deny paths must not create deny rules or throw.
+// Kind: invariant
+test("R1: undefined deny paths are handled safely", () => {
+  fc.assert(
+    fc.property(
+      fc.stringMatching(/^[a-z]{1,8}$/),
+      (folder) => {
+        const pattern = `${folder}/**`
+
+        expect(() => buildPathPermissions([pattern], undefined)).not.toThrow()
+
+        expect(buildPathPermissions([pattern], undefined)).toEqual([
+          { action: "read", resource: pattern, effect: "allow" },
+          { action: "edit", resource: pattern, effect: "allow" },
+        ])
+      },
+    ),
+  )
+
+  expect(buildPathPermissions(undefined, undefined)).toEqual([])
 })
 
 // R5: Adding a rule that does not match a requested path must leave
@@ -60,7 +110,12 @@ test("R5: unrelated rules do not change permission decisions", () => {
         const file = `${folderA}/file.ts`
 
         const originalRules = buildPathPermissions([`${folderA}/**`], ["*"])
-        const original = PermissionV2.evaluate("read", file, originalRules).effect
+
+        const originalRead = PermissionV2.evaluate("read", file, originalRules).effect
+        const originalEdit = PermissionV2.evaluate("edit", file, originalRules).effect
+
+        expect(originalRead).toBe("allow")
+        expect(originalEdit).toBe("allow")
 
         const withUnrelatedRule = [
           ...originalRules,
@@ -71,9 +126,14 @@ test("R5: unrelated rules do not change permission decisions", () => {
           },
         ]
 
-        const after = PermissionV2.evaluate("read", file, withUnrelatedRule).effect
+        const afterRead = PermissionV2.evaluate("read", file, withUnrelatedRule).effect
+        const afterEdit = PermissionV2.evaluate("edit", file, withUnrelatedRule).effect
 
-        expect(after).toBe(original)
+        expect(afterRead).toBe("allow")
+        expect(afterEdit).toBe("allow")
+
+        expect(afterRead).toBe(originalRead)
+        expect(afterEdit).toBe(originalEdit)
       },
     ),
   )
