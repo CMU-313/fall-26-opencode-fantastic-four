@@ -1,0 +1,8 @@
+diff --git a/packages/opencode/src/command/index.ts b/packages/opencode/src/command/index.ts
+--- a/packages/opencode/src/command/index.ts
++++ b/packages/opencode/src/command/index.ts
+@@ -46,3 +46,3 @@ export function hints(template: string) {
+ export function replaceArguments(template: string, input: string) {
+-  return template.replaceAll("$ARGUMENTS", () => input)
++  return template.replaceAll("$ARGUMENTS", input)
+ }

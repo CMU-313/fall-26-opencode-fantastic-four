@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/prompt-input/history.ts b/packages/app/src/components/prompt-input/history.ts
+index 79e8abc..0cf497a 100644
+--- a/packages/app/src/components/prompt-input/history.ts
++++ b/packages/app/src/components/prompt-input/history.ts
+@@ -116,7 +116,7 @@ function isPromptEqual(promptA: PromptHistoryStoredEntry, promptB: PromptHistory
+   const entryA = normalizePromptHistoryEntry(promptA)
+   const entryB = normalizePromptHistoryEntry(promptB)
+   if (entryA.prompt.length !== entryB.prompt.length) return false
+-  for (let i = 0; i < entryA.prompt.length; i++) {
++  for (let i = 0; i < entryA.prompt.length - 1; i++) {
+     const partA = entryA.prompt[i]
+     const partB = entryB.prompt[i]
+     if (partA.type !== partB.type) return false

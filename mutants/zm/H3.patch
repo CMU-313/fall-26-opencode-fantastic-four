@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/prompt-input/history.ts b/packages/app/src/components/prompt-input/history.ts
+index 79e8abc..133fdee 100644
+--- a/packages/app/src/components/prompt-input/history.ts
++++ b/packages/app/src/components/prompt-input/history.ts
+@@ -186,7 +186,7 @@ export function navigatePromptHistory(input: HistoryNavInput): HistoryNavResult
+         handled: true,
+         historyIndex: 0,
+         savedPrompt: {
+-          prompt: clonePromptParts(input.currentPrompt),
++          prompt: clonePromptParts(input.currentPrompt.filter((part) => part.type !== "file")),
+           comments: clonePromptHistoryComments(input.currentComments),
+         },
+         entry,
