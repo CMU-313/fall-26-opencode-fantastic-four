@@ -1,0 +1,13 @@
+diff --git a/packages/opencode/src/cli/cmd/agent.ts b/packages/opencode/src/cli/cmd/agent.ts
+index a50130b..d01df91 100644
+--- a/packages/opencode/src/cli/cmd/agent.ts
++++ b/packages/opencode/src/cli/cmd/agent.ts
+@@ -49,7 +49,7 @@ export function buildPathPermissions(allowPaths: string[] | undefined, denyPaths
+   const permissions: Permission.Rule[] = []
+ 
+   // order by deny first in order to follow evaluate() findLast (deny wins over allow for same resource)
+-  if (denyPaths && denyPaths.length > 0) {
++  if (denyPaths && denyPaths.length > 1) {
+     for (const path of denyPaths) {
+       permissions.push({ action: "read", resource: path, effect: "deny" })
+       permissions.push({ action: "edit", resource: path, effect: "deny" })

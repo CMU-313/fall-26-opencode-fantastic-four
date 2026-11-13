@@ -1,0 +1,36 @@
+diff --git a/packages/opencode/src/cli/cmd/agent.ts b/packages/opencode/src/cli/cmd/agent.ts
+index a50130b..0b7008a 100644
+--- a/packages/opencode/src/cli/cmd/agent.ts
++++ b/packages/opencode/src/cli/cmd/agent.ts
+@@ -52,7 +52,6 @@ export function buildPathPermissions(allowPaths: string[] | undefined, denyPaths
+   if (denyPaths && denyPaths.length > 0) {
+     for (const path of denyPaths) {
+       permissions.push({ action: "read", resource: path, effect: "deny" })
+-      permissions.push({ action: "edit", resource: path, effect: "deny" })
+     }
+   }
+   
+diff --git a/traceability/slu8.md b/traceability/slu8.md
+index 277c523..85d8105 100644
+--- a/traceability/slu8.md
++++ b/traceability/slu8.md
+@@ -27,4 +27,16 @@ Properties written or suggested by opencode or another AI tool: R3, R5
+ | R4 | If an action or path is blocked, the user should see a general message saying what was denied and that it should be reported if access is expected | If an action is blocked, the error message shows the rules responsible for the denial | The message text is UI behavior that is out of scope, and the specific wording can't be checked automatically. However, the rules responsible for the error can be checked and can fulfill the user need |
+ | R5 | Agent restrictions can be seen and reviewed using a slash command | Given a rule, an action, and a path, `explainAccess` returns the effect and the associated rule, or `ask` when no rule matches | Not feasible as CLI command. `agent list` reads the older V1 agent system and can't see agents created as `.md` files |
+ | R6 | After creating an agent with path restrictions, the user can check what files were limited or allowed | Given an agent's rules and a list of paths, an instructor can get the effect/rule for each path, to check before distributing | Not feasible for same R5 V1 reason. Depends on the file system. R6 can supply path permissions using `explainAccess`, as covered in R5 |
+-| R7 | A history of the rulesets can be printed using a command (to view changes in file/folder access) | Deferred, not implemented in this project |  Not feasible for timeframe. Requires history of session, which lies outside of the rule-building and evlauation scope |
+\ No newline at end of file
++| R7 | A history of the rulesets can be printed using a command (to view changes in file/folder access) | Deferred, not implemented in this project |  Not feasible for timeframe. Requires history of session, which lies outside of the rule-building and evlauation scope |
++
++
++
++
++
++
++
++
++## Mutant Predictions
++| ID | Requirement Targeted | Change | Predicted Killer | Actual Result |
++|---|---|---|---|---|
++|  |  |  |  |  |
+\ No newline at end of file
