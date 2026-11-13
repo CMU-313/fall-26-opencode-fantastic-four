@@ -1,0 +1,16 @@
+{
+    "testRunner": "command",
+    "commandRunner": {
+      "command": "bun test test/cli/agent.property.test.ts"
+    },
+    "mutate": [
+      "src/cli/cmd/agent.ts:48-68",
+      "src/cli/cmd/agent.ts:346-349"
+    ],
+    "coverageAnalysis": "off",
+    "reporters": [
+      "html",
+      "clear-text",
+      "progress"
+    ]
+  }

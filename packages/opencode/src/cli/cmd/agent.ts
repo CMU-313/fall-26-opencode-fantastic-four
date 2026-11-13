@@ -11,6 +11,7 @@ import type { Argv } from "yargs"
 import { Effect } from "effect"
 import { effectCmd } from "../effect-cmd"
 import { Permission } from "@opencode-ai/schema/permission"
+import { PermissionV2 } from "@opencode-ai/core/permission"
 
 type AgentMode = "all" | "primary" | "subagent"
 
@@ -345,3 +346,10 @@ export const AgentCommand = cmd({
   builder: (yargs) => yargs.command(AgentCreateCommand).command(AgentListCommand).demandCommand(),
   async handler() {},
 })
+
+
+// Returns the effect for an action/path and the rule that decided it.
+export function explainAccess(rules: Permission.Rule[], action: string, path: string) {
+  const rule = PermissionV2.evaluate(action, path, rules)
+  return { effect: rule.effect, rule }
+}
